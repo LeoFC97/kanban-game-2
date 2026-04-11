@@ -1,0 +1,20 @@
+% Gerado por scripts/generate-paper-figures.ts
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.95\linewidth,
+  height=5.2cm,
+  xlabel={Sprint},
+  ylabel={Cartões concluídos},
+  xmin=1,
+  xmax=10,
+  ymin=0,
+  legend style={font=\scriptsize,at={(0.5,1.02)},anchor=south},
+  legend columns=4,
+]
+\addplot[thick,mark=*,color=black!70] table[col sep=comma,x=sprint,y=A]{data/throughput_by_sprint.csv};
+\addplot[thick,mark=square*,color=blue!70] table[col sep=comma,x=sprint,y=B]{data/throughput_by_sprint.csv};
+\addplot[thick,mark=triangle*,color=red!75] table[col sep=comma,x=sprint,y=C]{data/throughput_by_sprint.csv};
+\addplot[thick,mark=diamond*,color=teal!80] table[col sep=comma,x=sprint,y=D]{data/throughput_by_sprint.csv};
+\legend{A,B,C,D}
+\end{axis}
+\end{tikzpicture}

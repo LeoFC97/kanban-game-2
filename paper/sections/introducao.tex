@@ -1,0 +1,17 @@
+\section{Introdução}
+
+Fluxos de desenvolvimento de software combinam filas de trabalho, políticas de puxar e cadências de planejamento~\cite{poppendieck2003lean,anderson2010kanban}. Em ambientes ágeis, práticas inspiradas em Kanban e Scrum coexistem: um quadro visual organiza o trabalho, enquanto ritos estruturam o calendário e a transparência do progresso~\cite{schwaber2002agile}. Do ponto de vista de Pesquisa Operacional, esse arranjo sugere um sistema estocástico com filas, políticas de serviço e eventos de calendário; contudo, ainda é difícil comunicar, em sala de aula ou em estudos exploratórios, como \emph{fatores humanos} --- relações entre pares e características individuais --- interagem com variabilidade de capacidade e com gargalos operacionais.
+
+Simuladores educacionais comerciais, como o \emph{Kanban Simulator}~\cite{kanbanSimulator}, tornaram intuitiva a ideia de variabilidade diária e de especialização. Contudo, para fins de pesquisa e ensino avançado, interessa um modelo \textbf{declarado em equações e parâmetros}, \textbf{reprodutível} e \textbf{separável}: é desejável poder isolar o efeito da sinergia entre dois desenvolvedores em um cartão colaborativo sem, ao mesmo tempo, alterar o backlog, a semente do gerador aleatório ou a política de WIP.
+
+\textbf{Objetivo.} Formalizar e apresentar um motor de simulação transparente que una (i) fluxo Kanban diário, (ii) cadência Scrum simplificada, (iii) sinergia interpessoal na colaboração na mesma etapa e na passagem de bastão entre etapas (\emph{handoff}), e (iv) traços individuais, permitindo experimentos A/B reprodutíveis.
+
+\textbf{Contribuições.}
+\begin{itemize}
+  \item \textbf{Modelo operacional explícito:} tempo discreto, colunas de fluxo, capacidade por membro com componente aleatória e bônus de especialista, política FIFO nas filas de trabalho e avanço entre estágios com handoff e retrabalho.
+  \item \textbf{Sinergia e traços como fatores controláveis:} matriz simétrica $s_{ij}\in[-1,1]$ entra em multiplicadores com \emph{clamp}; traços são um catálogo pequeno com efeitos numéricos agregados por membro.
+  \item \textbf{Calendário Scrum acoplado ao motor:} planejamento, dias úteis, revisão e retrospectiva (esta última, no protótipo, apenas como marcador de sprint).
+  \item \textbf{Pacote experimental mínimo:} mesma semente e mesmo backlog, variando sinergia e um defeito isolado, com exportação automática de métricas e figuras.
+\end{itemize}
+
+\textbf{Organização.} A Seção~\ref{sec:relacionados} posiciona trabalhos relacionados. A Seção~\ref{sec:modelo} descreve o sistema, a notação e o algoritmo diário. A Seção~\ref{sec:ritos} amarra ritos ao calendário. A Seção~\ref{sec:arquitetura} resume a arquitetura do protótipo e apresenta um fluxo visual. As Seções~\ref{sec:experimentos} e~\ref{sec:resultados} apresentam experimentos e resultados ilustrativos. A Seção~\ref{sec:discussao} discute limitações e a Seção~\ref{sec:conclusao} conclui.

@@ -1,0 +1,238 @@
+{
+  "nav": {
+    "brand": "Kanban + Synergy",
+    "defaultScenario": "Default scenario",
+    "savePreset": "Save preset",
+    "loadPreset": "Load preset",
+    "exportJson": "Export JSON",
+    "importJson": "Import JSON",
+    "language": "Language"
+  },
+  "languages": {
+    "pt-BR": "Portuguese (BR)",
+    "en": "English",
+    "es": "Spanish"
+  },
+  "alerts": {
+    "savedPreset": "Configuration saved in this browser.",
+    "nothingSaved": "Nothing saved yet.",
+    "invalidJson": "Invalid JSON."
+  },
+  "columns": {
+    "backlog": "Backlog",
+    "ready": "Ready",
+    "analise": "Analysis",
+    "dev": "Dev",
+    "teste": "Test",
+    "deploy": "Deploy"
+  },
+  "specialty": {
+    "Analista": "Analyst",
+    "Desenvolvedor": "Developer",
+    "Testador": "Tester"
+  },
+  "jobRoles": {
+    "tech_lead": {
+      "name": "Tech Lead",
+      "gameEffect": "+15% effective daily capacity for everyone whose board role is Developer. Stacking is summed per role type; the engine caps the global bonus per specialty."
+    },
+    "scrum_master": {
+      "name": "Scrum Master",
+      "gameEffect": "Lowers handoff rework chance for the whole team. Multiple Scrum Masters stack up to an engine cap."
+    }
+  },
+  "setup": {
+    "title": "Match setup",
+    "lede": "Build the team, traits, synergy matrix, and backlog. When you start, the configuration is frozen until you return to setup.",
+    "team": "Team",
+    "addMember": "+ Member",
+    "memberNamePlaceholder": "Name",
+    "quality": "Strength",
+    "flaw": "Weakness",
+    "traitNone": "—",
+    "remove": "Remove",
+    "synergyTitle": "Synergy (pairwise)",
+    "backlogTitle": "Initial backlog",
+    "addCard": "+ Card",
+    "tableTitle": "Title",
+    "tablePoints": "Points",
+    "tableCollab": "Collab.",
+    "tableAssignees": "Assignees",
+    "paramsTitle": "Simulation parameters",
+    "hypothesisTitle": "Hypothesis / rules",
+    "hypothesisBody": "Each member sets a daily delivery range (min–max); each working day an integer is drawn uniformly from that range. Only then multipliers apply: specialty column (~×2 + traits), then global job-role bonuses (e.g. Tech Lead). With no range set, the legacy 1…dice max applies (max affected by traits). On Dev, collaborative cards use synergy and pair traits. Handoffs use γ and traits; low synergy raises rework; Scrum Master reduces handoff rework for everyone. On Daily and Sprint Review days a random event may fire (sickness, vacation, etc.) according to the configured probability — see the list during the match.",
+    "deliveryRange": "Daily delivery (min — max)",
+    "deliveryHint": "Uniform draw per day in this range; specialist and job-role multipliers apply afterward (engine caps daily effective capacity).",
+    "jobRole": "Job role (optional)",
+    "startGame": "Start match",
+    "defaults": {
+      "newMemberName": "New member",
+      "newStoryTitle": "New story"
+    },
+    "memberSynergy": {
+      "byPersonTitle": "Synergy by person",
+      "byPersonHint": "Pairwise value with each teammate. Uncheck «Bidirectional» to set direction (me → other) per card; handoffs use only the sender’s view; collaboration uses the average of both directions.",
+      "bidirectional": "Bi-dir.",
+      "byRoleTitle": "Synergy by role",
+      "byRoleHint": "Extra adjustment when working with anyone in that role (added to pair synergy; total clamped to −1…+1).",
+      "withRole": "With {{role}}",
+      "needAnotherMember": "Add another member to edit per-person synergy."
+    },
+    "params": {
+      "daysPerSprint": "Days per sprint",
+      "numSprints": "Number of sprints",
+      "seed": "Seed (reproducibility)",
+      "wipPerColumn": "WIP per column",
+      "planningPullMax": "Max cards in Planning",
+      "synergyBeta": "β (collaboration synergy)",
+      "synergyGamma": "γ (handoff synergy)",
+      "dailyRandomEventChance": "Random event probability / day (Daily & Review)"
+    }
+  },
+  "errors": {
+    "atLeastOneMember": "Add at least one member.",
+    "collabTwoAssignees": "Collaborative card \"{{title}}\" needs 2 assignees.",
+    "cardOneAssignee": "Card \"{{title}}\" needs at least 1 assignee."
+  },
+  "synergy": {
+    "needTwoMembers": "Add at least two members to edit synergy.",
+    "hint": "Values between −1 (friction) and +1 (alignment). Used in collaboration on Dev and in handoffs between stages.",
+    "matrixSyncedWithMemberCards": "The matrix below is the same per-person synergy as on each member card.",
+    "matrixAsymmetricHint": "Non-bidirectional pair: edit values on member cards (me → teammate arrows).",
+    "matrixAsymmetricBadge": "asymmetric",
+    "pairHeader": "Pair",
+    "valueHeader": "Synergy"
+  },
+  "kanban": {
+    "pts": "pts",
+    "remaining": "remaining",
+    "collabShort": "collab"
+  },
+  "cfd": {
+    "title": "Cumulative Flow Diagram (CFD)",
+    "empty": "Run days to see the CFD."
+  },
+  "cycleTime": {
+    "title": "Cycle time (Ready → Deploy)",
+    "empty": "No cards in Deploy yet.",
+    "mean": "Mean",
+    "median": "Median",
+    "days": "days",
+    "rowItem": "{{title}}: {{days}} days"
+  },
+  "ceremonies": {
+    "sprint_planning": "Sprint Planning",
+    "daily_scrum": "Daily Scrum",
+    "sprint_review": "Sprint Review",
+    "retrospective": "Retrospective"
+  },
+  "play": {
+    "title": "Match",
+    "metaLine": "Seed {{seed}} · {{daysPerSprint}} days/sprint · {{numSprints}} sprints",
+    "exportResult": "Export result JSON",
+    "resetMatch": "Reset match",
+    "backToSetup": "Back to setup",
+    "globalDay": "Global day {{day}}",
+    "sprintBadge": "Sprint {{n}}",
+    "dayBadge": "Day {{n}}",
+    "calendarHint": "Advance one day to start the calendar.",
+    "advanceOneDay": "Advance 1 day",
+    "advanceSprint": "Advance until after Retrospective",
+    "runAll": "Simulate all sprints",
+    "lastDayEvents": "Latest day events",
+    "dayModal": {
+      "title": "Day summary",
+      "close": "Close",
+      "randomEvents": "Today's events",
+      "capacityTitle": "Delivery roll & effective capacity",
+      "colMember": "Member",
+      "colRoll": "Base roll",
+      "colEffective": "Effective capacity",
+      "boardTitle": "Cards per column (end of day)",
+      "logTitle": "Engine log"
+    }
+  },
+  "dailyEvents": {
+    "catalogTitle": "Random events (working days)",
+    "catalogIntro": "On Daily Scrum and Sprint Review days, with the probability set in setup, one event per day may occur. It applies to effective capacity after the base roll, specialist multiplier, and job-role bonuses.",
+    "weightLabel": "Draw weight: {{w}}",
+    "member_sick": {
+      "name": "Sick team member",
+      "effect": "Effective capacity for the drawn member is 0 for the day (no delivery points)."
+    },
+    "member_vacation": {
+      "name": "Vacation / absence",
+      "effect": "Effective capacity for the drawn member is 0 (planned absence)."
+    },
+    "member_half_day": {
+      "name": "Half day",
+      "effect": "Effective capacity for the drawn member is multiplied by 0.5."
+    },
+    "team_meeting": {
+      "name": "Alignment meetings",
+      "effect": "Everyone: effective capacity ×0.65 (many interruptions)."
+    },
+    "infrastructure_outage": {
+      "name": "Infrastructure incident",
+      "effect": "Everyone: effective capacity ×0.78 (CI, VPN, or unstable environment)."
+    },
+    "good_vibes_break": {
+      "name": "Good mood / productive break",
+      "effect": "Everyone: effective capacity ×1.12 (capped by the engine's daily ceiling)."
+    }
+  },
+  "engine": {
+    "reworkHandoff": "Rework on handoff ({{from}} → {{to}}) on card «{{title}}».",
+    "pullReadyAnalise": "Pull Ready → Analysis: {{title}}.",
+    "planningToReady": "Planning: {{title}} → Ready.",
+    "sprintReviewDay": "Sprint Review: last working day of the sprint.",
+    "retroNarrative": "Retrospective: team reflection (no mechanical effect in v1).",
+    "dailyEventMemberSick": "Event: {{memberName}} is sick — no capacity today.",
+    "dailyEventMemberVacation": "Event: {{memberName}} away (vacation or similar) — no capacity today.",
+    "dailyEventMemberHalfDay": "Event: {{memberName}} on a half day — reduced capacity.",
+    "dailyEventTeamMeeting": "Event: meeting-heavy day — team capacity reduced.",
+    "dailyEventOutage": "Event: infrastructure incident — team capacity reduced.",
+    "dailyEventGoodVibes": "Event: good vibes — small capacity boost for everyone."
+  },
+  "traits": {
+    "comunicador": {
+      "name": "Communicator",
+      "description": "Eases alignment between stages.",
+      "gameEffect": "+0.08 to handoff multiplier (less friction between stages)."
+    },
+    "mentor": {
+      "name": "Mentor",
+      "description": "Helps the pair in collaborative work.",
+      "gameEffect": "+0.06 to collaboration multiplier on Dev."
+    },
+    "veterano": {
+      "name": "Veteran",
+      "description": "Strong technical command in their specialty.",
+      "gameEffect": "+0.25 to specialist bonus (base multiplier stays 2)."
+    },
+    "hiperfoco": {
+      "name": "Hyperfocus",
+      "description": "Loses efficiency when splitting attention.",
+      "gameEffect": "−1 to dice maximum (lower daily throughput cap)."
+    },
+    "evita_conflito": {
+      "name": "Conflict avoidant",
+      "description": "Holds back doubts when dynamics with the pair are poor.",
+      "gameEffect": "−0.08 to collaboration multiplier on Dev."
+    },
+    "silos": {
+      "name": "Silo mindset",
+      "description": "Makes handoffs harder.",
+      "gameEffect": "−0.10 to handoff multiplier."
+    }
+  },
+  "scenario": {
+    "members": { "ana": "Ana", "bruno": "Bruno", "carla": "Carla" },
+    "cards": {
+      "api": "Orders API",
+      "checkout": "Collaborative checkout",
+      "report": "QA report",
+      "dashboard": "Admin dashboard"
+    }
+  }
+}

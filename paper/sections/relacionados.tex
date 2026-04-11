@@ -1,0 +1,14 @@
+\section{Trabalhos relacionados}
+\label{sec:relacionados}
+
+\paragraph{Simulação e fluxo em desenvolvimento de software.}
+A literatura de simulação a eventos discretos e de teoria de filas aplica-se naturalmente a processos de conhecimento~\cite{banks2010discrete}, embora a estimação de parâmetros e a validação sejam desafios conhecidos. Em engenharia de software, métricas como throughput, tempo de ciclo e diagramas de fluxo cumulativo (CFD) tornaram-se linguagem comum em iniciativas lean/Kanban~\cite{anderson2010kanban}. Modelos pedagógicos baseados em cartões e colunas ajudam a ilustrar WIP e variabilidade, frequentemente com componente estocástica na capacidade diária.
+
+\paragraph{Simuladores e jogos sérios.}
+O \emph{Kanban Simulator}~\cite{kanbanSimulator} popularizou a dinâmica de dados por membro e bônus de especialidade na coluna correspondente, além de métricas de fluxo. Do ponto de vista de Pesquisa Operacional, tais ferramentas são valiosas como \emph{intuição}, mas nem sempre expõem todas as regras necessárias para replicação acadêmica estrita. Em paralelo, \emph{jogos sérios} e laboratórios de software têm sido usados para ensinar políticas de filas e efeitos de gargalo; nosso foco aqui é complementar: um motor declarativo, versionável e inspecionável.
+
+\paragraph{Fatores humanos e equipes.}
+Estudos em psicologia organizacional e engenharia de software discutem coesão, confiança e conflito. Nosso enquadramento não pretende substituir instrumentos psicométricos: a sinergia $s_{ij}\in[-1,1]$ é um \textbf{parâmetro} explícito do modelo, interpretável como um resumo operacional de facilitação ou atrito entre pares \emph{sob as regras do simulador}. Traços individuais funcionam como ``perfiladores'' leves que alteram coeficientes do mesmo núcleo mecânico, permitindo contrastar hipóteses sem multiplicar famílias de modelos.
+
+\paragraph{Síntese.}
+Diferentemente de abordagens puramente narrativas ou de \emph{caixas-pretas}, o arcabouço aqui descrito prioriza transparência algorítmica (implementação em TypeScript no repositório associado) e um pacote mínimo de cenários A/B para análise de sensibilidade.

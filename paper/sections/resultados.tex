@@ -1,0 +1,50 @@
+\section{Resultados ilustrativos}
+\label{sec:resultados}
+
+Todos os números desta seção são \textbf{gerados automaticamente} pelo script \texttt{npm run paper:figures}, a partir do motor \texttt{runSimulation} do repositório. As figuras foram construídas com \texttt{pgfplots} lendo arquivos CSV exportados pelo mesmo script, de modo que pequenos ajustes de parâmetros possam ser refletidos rapidamente no PDF.
+
+\input{data/summary_stats.tex}
+
+A Figura~\ref{fig:cfdA} mostra a dinâmica das filas no cenário A: é possível observar como o estoque em \texttt{backlog} e \texttt{ready} se relaciona com o trabalho em progresso nas colunas de especialidade. As Figuras~\ref{fig:bar} e~\ref{fig:tp} condensam comparações entre cenários: a primeira destaca a média de tempo de ciclo (complementada pela mediana na Tabela~\ref{tab:resumoCenarios}), enquanto a segunda evidencia diferenças de throughput por sprint quando alteramos sinergia ou um traço isolado.
+
+\begin{figure}[htbp]
+  \centering
+  \input{data/fig_cfd_baseline.tex}
+  \caption{Contagens de cartões por coluna ao longo dos dias globais no cenário A (linha de base).}
+  \label{fig:cfdA}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \input{data/fig_bar_cycle.tex}
+  \caption{Média de tempo de ciclo (dias) por cenário, considerando apenas cartões concluídos na janela simulada.}
+  \label{fig:bar}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \input{data/fig_throughput.tex}
+  \caption{Throughput por sprint (cartões que chegam a \texttt{deploy} no sprint), para os quatro cenários.}
+  \label{fig:tp}
+\end{figure}
+
+\begin{table}[htbp]
+  \centering
+  \caption{Resumo dos quatro cenários (média e mediana de ciclo em dias; valores gerados em \texttt{summary\_stats.tex}).}
+  \label{tab:resumoCenarios}
+  \begin{tabular}{@{}lccc@{}}
+    \toprule
+    Cenário & Concluídos & Média ciclo & Mediana ciclo \\
+    \midrule
+    A & \StatCompletedA & \StatMeanCtA & \StatMedianCtA \\
+    B & \StatCompletedB & \StatMeanCtB & \StatMedianCtB \\
+    C & \StatCompletedC & \StatMeanCtC & \StatMedianCtC \\
+    D & \StatCompletedD & \StatMeanCtD & \StatMedianCtD \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\paragraph{Leitura rápida.}
+No pacote reportado aqui, o cenário B tende a melhorar a média de ciclo frente ao A quando a colaboração em \texttt{dev} é amplificada, enquanto o cenário C piora a média ao combinar um \emph{handoff} desfavorável com maior chance de retrabalho. O cenário D ilustra como um traço pode não se traduzir em diferença grande na média agregada para uma mesma semente e backlog --- um lembrete útil em trabalhos de conclusão que discutem sensibilidade \emph{versus} magnitude.
+
+Arquivos adicionais em \texttt{paper/figures/} (SVG) e \texttt{paper/data/} (CSV/JSON) permitem reproduzir as figuras fora do \LaTeX{}.

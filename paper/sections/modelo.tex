@@ -1,0 +1,117 @@
+\section{Descrição do sistema e modelo operacional}
+\label{sec:modelo}
+
+\subsection{Visão geral}
+Consideramos um conjunto finito de \textbf{membros} $\mathcal{M}$, cada um com especialidade em $\{\text{Analista},\text{Desenvolvedor},\text{Testador}\}$, e um conjunto de \textbf{cartões} (histórias) com pontos $p\in\mathbb{N}$. O fluxo segue colunas ordenadas:
+\[
+\texttt{backlog}\rightarrow\texttt{ready}\rightarrow\texttt{analise}\rightarrow\texttt{dev}\rightarrow\texttt{teste}\rightarrow\texttt{deploy}.
+\]
+Cada cartão de pontos $p$ tem trabalho remanescente por etapa $(w^A,w^D,w^T)$ obtido por uma regra fixa de particionamento aproximadamente $30\%/50\%/20\%$ de $p$ com arredondamentos inteiros e garantia de componentes positivos (implementação: função \texttt{splitWork} no código-fonte).
+
+\subsection{Parâmetros globais}
+Além do backlog e da equipe, o modelo usa parâmetros agregados (todos auditáveis no tipo \texttt{SimulationParams}): número de dias úteis por sprint $D$, número de sprints $K$, semente $\sigma$ do PRNG, limite de WIP por coluna de trabalho $W$, limite de puxadas do backlog para \texttt{ready} no planejamento $P_{\max}$, coeficientes $\beta$ (colaboração) e $\gamma$ (handoff), extremos de \emph{clamp} para multiplicadores de colaboração e handoff, limiar $s^\star$ que controla a chance de retrabalho em handoffs desfavoráveis, e unidades de retrabalho $u_R$.
+
+\subsection{Sinergia e traços}
+Para cada par não ordenado $\{i,j\}\subset\mathcal{M}$ define-se $s_{ij}=s_{ji}\in[-1,1]$ (default $0$ se ausente). Cada membro pode carregar até uma qualidade e um defeito de um catálogo fechado; cada traço altera vetores numéricos pequenos (variação no máximo do dado, bônus de especialista, ajustes nos multiplicadores de colaboração/handoff, WIP efetivo e chance incremental de retrabalho). O efeito líquido de traços em um membro é a soma dos efeitos (função \texttt{resolveMemberModifiers}).
+
+\begin{table}[htbp]
+  \centering
+  \caption{Catálogo de traços (v1) e efeitos principais no motor.}
+  \label{tab:tracos}
+  \begin{tabular}{@{}llp{6.8cm}@{}}
+    \toprule
+    Nome & Tipo & Efeito operacional resumido \\
+    \midrule
+    Comunicador & Qualidade & $+0{,}08$ no termo aditivo do multiplicador de handoff. \\
+    Mentor & Qualidade & $+0{,}06$ no termo aditivo do multiplicador de colaboração em \texttt{dev}. \\
+    Veterano & Qualidade & $+0{,}25$ no bônus de especialista (sobre a base multiplicativa). \\
+    Hiperfoco & Defeito & $-1$ no máximo do dado diário (após \emph{clamp}). \\
+    Evita conflito & Defeito & $-0{,}08$ no termo de colaboração em \texttt{dev}. \\
+    Mentalidade de silo & Defeito & $-0{,}10$ no termo de handoff. \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Calendário e incremento de tempo}
+O tempo avança em \textbf{dias globais} $t=1,2,\dots$. A cada dia pertence a um sprint $k$ e a um índice de dia no sprint $d\in\{1,\dots,D\}$, além de um rito (Seção~\ref{sec:ritos}). O estado inclui filas por coluna e, para cada cartão em etapa de trabalho, o remanescente da etapa corrente $\textit{rem}$.
+
+\subsection{Planejamento (puxar para \texttt{ready})}
+No dia de \emph{Sprint Planning}, repetimos até $P_{\max}$ vezes: se existir cartão em \texttt{backlog} e a fila \texttt{ready} ainda tiver menos de $P_{\max}$ cartões, move-se o cartão do início de \texttt{backlog} para o fim de \texttt{ready}. Em seguida, enquanto $|\texttt{analise}|<W'$ e \texttt{ready} não estiver vazio, puxa-se cartões de \texttt{ready} para \texttt{analise} até o teto $W'$, onde $W'$ é o WIP efetivo por coluna após somar arredondamentos dos traços da equipe.
+
+\subsection{Capacidade diária por membro}
+Para cada membro $m$ no dia de trabalho, sorteia-se um inteiro uniforme
+\[
+X_m \sim \mathcal{U}\{1,\dots,D^{\max}_m\},\qquad
+D^{\max}_m = \mathrm{clip}\big(6+\Delta^{\text{dado}}_m,\,2,\,8\big),
+\]
+em que $\Delta^{\text{dado}}_m$ agrega traços. Seja $h_m\in\{\texttt{analise},\texttt{dev},\texttt{teste}\}$ a coluna da especialidade de $m$. Se existir trabalho remanescente positivo em $h_m$, define-se capacidade bruta
+\[
+C_m = \min\left\{12,\left\lfloor X_m \cdot \rho_m + \tfrac{1}{2}\right\rfloor\right\},
+\quad
+\rho_m = \mathrm{clip}\big(2+\Delta^{\text{esp}}_m,\,1.25,\,3.5\big),
+\]
+caso contrário $C_m=X_m$. O valor $C_m$ é a \textbf{capacidade bruta} aplicável às colunas de trabalho.
+
+\subsection{Política de alocação da capacidade}
+Para cada membro $m$ nesta ordem, inicializa-se $L\leftarrow C_m$. Primeiro, se sua especialidade $h_m$ possui cartões com $\textit{rem}>0$, aplica-se o procedimento \textsc{Spend} em $h_m$ (abaixo). Depois, para cada coluna de trabalho na ordem $(\texttt{analise},\texttt{dev},\texttt{teste})$, enquanto $L>0$, aplica-se \textsc{Spend}.
+
+\paragraph{Procedimento \textsc{Spend} em uma coluna $h$.}
+Percorre-se a fila de $h$ na ordem FIFO. Para cada cartão com $\textit{rem}>0$, define-se multiplicador de colaboração
+\[
+M^{\text{col}} =
+\begin{cases}
+\mathrm{clip}\big(1+\beta\, s_{ab} + T^{\text{col}}_{ab},\,E^{\min}_{\text{col}},\,E^{\max}_{\text{col}}\big), & \text{se colaborativo com assignees }a,b,\\
+1, & \text{caso contrário},
+\end{cases}
+\]
+onde $T^{\text{col}}_{ab}$ agrega termos de traço dos dois assignees. Na coluna \texttt{dev} apenas, o trabalho efetivo consumido por unidade bruta é multiplicado por $M^{\text{col}}$; nas demais, $M^{\text{col}}=1$. Dado orçamento bruto $L$, para um cartão com remanescente $\textit{rem}$ o máximo de unidades brutas aplicáveis é $\textit{rem}/M^{\text{col}}$ em \texttt{dev} (e $\textit{rem}$ nas outras). Consome-se $\delta=\min\{L,\textit{rem}/M^{\text{col}}\}$ (com convenção acima), reduzindo $\textit{rem}\leftarrow \textit{rem}-\delta M^{\text{col}}$ em \texttt{dev} (e $\textit{rem}-\delta$ nas outras). Se $\textit{rem}$ zera, tenta-se avançar o cartão.
+
+\subsection{Avanço entre colunas, handoff e retrabalho}
+Ao avançar de uma coluna de trabalho $h$ para a próxima, sejam $o$ e $i$ os membros ``doador'' e ``receptor'' inferidos pelas especialidades das colunas (com regras de fallback para assignees e equipe mínima). Define-se
+\[
+M^{\text{hand}} = \mathrm{clip}\big(1+\gamma\, s_{oi} + T^{\text{hand}}_{oi},\,H^{\min},\,H^{\max}\big),
+\]
+com $T^{\text{hand}}$ somando termos de traço. Com probabilidade
+\[
+\pi_R = \mathrm{clip}\Big(\mathbb{I}\{s_{oi}<s^\star\}\cdot\big(0.06+(s^\star-s_{oi})\,0.22\big) + \Delta^{\text{rw}}_o+\Delta^{\text{rw}}_i,\,0,\,0.55\Big),
+\]
+sorteia-se retrabalho; se ocorrer, acrescentam-se $u_R$ unidades ao estágio de destino (e registra-se nota explicativa). Ao entrar em \texttt{dev} ou \texttt{teste} a partir de um handoff entre especialidades, o remanescente inicial do estágio é majorado por arredondamentos que incorporam $M^{\text{hand}}$ (detalhe implementado no código-fonte).
+
+\subsection{Métricas}
+Do registro diário de contagens por coluna (estrutura \texttt{DayLog} no código) constrói-se uma série temporal por coluna, útil para visualizações no estilo de CFD e para inspeção de gargalos. Para cada cartão concluído, mede-se tempo de ciclo (dias globais entre entrada em \texttt{ready} e chegada a \texttt{deploy}). O throughput por sprint agrega conclusões pelo sprint associado ao dia global de \texttt{deploy}.
+
+\subsection{Pseudocódigo do dia de trabalho}
+A listagem abaixo condensa a política de alocação descrita nas subseções anteriores; detalhes de handoff, retrabalho e mensagens de diagnóstico permanecem no código-fonte.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{minipage}{0.92\linewidth}
+  \small
+  \begin{verbatim}
+Para cada membro m (ordem fixa da equipe):
+  sortear X_m e calcular C_m (aplicar multiplicador de especialista se houver
+                             trabalho remanescente na coluna da especialidade)
+  L <- C_m
+  Gastar(h_m, L)                    // prioriza a coluna da especialidade
+  para h em (analise, dev, teste):
+    Gastar(h, L)
+
+Gastar(h, L):
+  para cada cartão na fila h (FIFO, cópia do estado atual):
+    se rem <= 0: continuar
+    se h == dev e cartão colaborativo:
+       M <- M_col(sinergia, traços dos responsáveis)
+       consumir delta <- min(L, rem/M) em unidades brutas
+       rem <- rem - delta * M
+    senão:
+       consumir delta <- min(L, rem)
+       rem <- rem - delta
+    se rem == 0: tentar avançar cartão (handoff, possível retrabalho)
+  \end{verbatim}
+  \end{minipage}
+  \caption{Visão compacta do passo de trabalho diário (processamento sequencial por membro; cada um consome sua capacidade bruta antes do próximo).}
+  \label{fig:pseudo}
+\end{figure}
+
+\subsection{Implementação e reprodutibilidade}
+O motor é implementado em TypeScript puro (sem dependência de UI) no diretório \texttt{src/simulation/}, expondo \texttt{runSimulation(config)} com PRNG determinístico por $\sigma$ (\texttt{rng.ts}). O arquivo de cenários experimentais e parâmetros fixos espelha-se em \texttt{scripts/paperScenarios.ts}, e figuras/tabelas podem ser regeneradas com \texttt{npm run paper:figures}. Isso facilita auditoria por revisores e replicação em aulas ou laboratórios.

@@ -1,0 +1,18 @@
+% Gerado por scripts/generate-paper-figures.ts
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.62\linewidth,
+  height=5cm,
+  ybar,
+  ymin=0,
+  symbolic x coords={A,B,C,D},
+  xtick=data,
+  xticklabel style={align=center},
+  ylabel={Média de ciclo (dias)},
+  nodes near coords,
+  nodes near coords align={vertical},
+  bar width=16pt,
+]
+\addplot[fill=blue!55] coordinates {(A,2.71) (B,2.57) (C,3) (D,2.71)};
+\end{axis}
+\end{tikzpicture}

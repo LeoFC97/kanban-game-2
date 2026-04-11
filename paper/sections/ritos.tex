@@ -1,0 +1,22 @@
+\section{Ritos Scrum no calendário}
+\label{sec:ritos}
+
+Para cada sprint $k=1,\dots,K$, indexamos dias $d=1,\dots,D$ e um dia adicional formal de \emph{retrospectiva} sem alteração mecânica do estado no protótipo atual (apenas registro em log).
+
+\begin{table}[htbp]
+  \centering
+  \caption{Mapeamento simples entre dia no sprint e modo de processamento.}
+  \label{tab:ritos}
+  \begin{tabular}{@{}llp{7.2cm}@{}}
+    \toprule
+    Dia $d$ & Rito / modo & Efeito no motor (v1) \\
+    \midrule
+    $1$ & \emph{Sprint Planning} & Puxa cartões de \texttt{backlog} para \texttt{ready} até o limite $P_{\max}$; em seguida puxa de \texttt{ready} para \texttt{analise} respeitando WIP efetivo. \\
+    $2,\dots,D-1$ & \emph{Daily Scrum} & Dia de trabalho: aplica capacidade, alocação e avanços. \\
+    $D$ & \emph{Sprint Review} & Também dia de trabalho (mesma mecânica), com marcação explícita no log. \\
+    $D{+}1$ & \emph{Retrospectiva} & Sem efeito mecânico; encerra sprint e reinicia $d\leftarrow 1$. \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+A separação pedagógica entre ``marcador'' de Daily e o processamento de trabalho facilita narrativas de ensino: o calendário Scrum aparece como \textbf{ritmo} sobreposto ao \textbf{fluxo} Kanban~\cite{schwaber2002agile}, sem exigir modelagem de horas de reunião na primeira versão. Em termos de modelagem OR, os ritos funcionam como \textbf{modos} do mesmo relógio de simulação: mudam quais transições são habilitadas no início do dia (puxar \emph{vs.} apenas processar), preservando um único estado de sistema entre dias.

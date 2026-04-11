@@ -1,0 +1,38 @@
+\section{Arquitetura do protótipo e fluxo visual}
+\label{sec:arquitetura}
+
+Do ponto de vista de engenharia de software, o protótipo separa um \textbf{núcleo de simulação} (TypeScript puro, sem dependência de \emph{framework}) de uma camada de interface que pode evoluir para um fluxo em duas fases (configuração do cenário e execução da simulação, no espírito de \emph{setup} e \emph{partida}) sem alterar o contrato do motor. Na versão atual do repositório, o núcleo concentra tipos, catálogo de traços, resolução de modificadores, PRNG com semente, sinergia e o motor diário (\texttt{runSimulation}), enquanto rotinas auxiliares geram séries para CFD e tempos de ciclo.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[
+    col/.style={draw, rounded corners=2pt, minimum width=1.05cm, minimum height=0.9cm, align=center, font=\scriptsize},
+    arr/.style={-{Latex[length=2mm]}, thick},
+    note/.style={font=\scriptsize, align=center},
+  ]
+    \node[col] (bl) {Backlog};
+    \node[col, right=0.35cm of bl] (rd) {Ready};
+    \node[col, right=0.35cm of rd] (an) {Análise};
+    \node[col, right=0.35cm of an] (dv) {Dev};
+    \node[col, right=0.35cm of dv] (ts) {Teste};
+    \node[col, right=0.35cm of ts] (dp) {Deploy};
+    \draw[arr] (bl) -- (rd);
+    \draw[arr] (rd) -- (an);
+    \draw[arr] (an) -- (dv);
+    \draw[arr] (dv) -- (ts);
+    \draw[arr] (ts) -- (dp);
+    \path (bl.north west) ++(-0.15,0.55) coordinate (topL);
+    \path (dp.north east) ++(0.15,0.55) coordinate (topR);
+    \draw[dashed, gray] (topL) rectangle ($(dp.south east)+(0.15,-0.35)$);
+    \node[note, anchor=south] at ($(topL)!0.5!(topR)$) {Quadro Kanban (colunas de fluxo)};
+    \node[note, anchor=north west] at ($(bl.south west)+(-0.1,-0.85)$)
+      {\textbf{Ritmo Scrum (v1):} dia $1$ --- planejamento (puxar para \emph{Ready} e Análise);\\
+       dias $2,\ldots,D-1$ --- trabalho (\emph{Daily});\\
+       dia $D$ --- trabalho e revisão do sprint (marcador);\\
+       dia formal de retrospectiva sem efeito mecânico.};
+  \end{tikzpicture}
+  \caption{Fluxo principal de cartões e relação conceitual com o calendário de ritos.}
+  \label{fig:fluxoQuadro}
+\end{figure}
+
+A Figura~\ref{fig:fluxoQuadro} resume a leitura pedagógica que queremos preservar: o Kanban organiza \emph{o que} está em cada estágio; o Scrum organiza \emph{quando} certas ações de cadência ocorrem. O motor materializa essa combinação ao alternar transições de planejamento e passos de trabalho conforme a Tabela~\ref{tab:ritos}.

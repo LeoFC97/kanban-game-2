@@ -1,0 +1,238 @@
+{
+  "nav": {
+    "brand": "Kanban + Sinergia",
+    "defaultScenario": "Escenario predeterminado",
+    "savePreset": "Guardar preset",
+    "loadPreset": "Cargar preset",
+    "exportJson": "Exportar JSON",
+    "importJson": "Importar JSON",
+    "language": "Idioma"
+  },
+  "languages": {
+    "pt-BR": "Portugués (BR)",
+    "en": "Inglés",
+    "es": "Español"
+  },
+  "alerts": {
+    "savedPreset": "Configuración guardada en este navegador.",
+    "nothingSaved": "Aún no hay nada guardado.",
+    "invalidJson": "JSON no válido."
+  },
+  "columns": {
+    "backlog": "Backlog",
+    "ready": "Ready",
+    "analise": "Análisis",
+    "dev": "Dev",
+    "teste": "Pruebas",
+    "deploy": "Deploy"
+  },
+  "specialty": {
+    "Analista": "Analista",
+    "Desenvolvedor": "Desarrollador",
+    "Testador": "Tester"
+  },
+  "jobRoles": {
+    "tech_lead": {
+      "name": "Tech Lead",
+      "gameEffect": "+15% de capacidad efectiva diaria para quienes tengan el cargo «Desarrollador» en el tablero. Varios Tech Lead suman; el motor limita el bono global por especialidad."
+    },
+    "scrum_master": {
+      "name": "Scrum Master",
+      "gameEffect": "Reduce la probabilidad de retrabajo en handoffs para todo el equipo. Varios Scrum Masters suman hasta un tope en el motor."
+    }
+  },
+  "setup": {
+    "title": "Configuración de la partida",
+    "lede": "Arma el equipo, rasgos, matriz de sinergia y backlog. Al iniciar, la configuración queda congelada hasta volver al setup.",
+    "team": "Equipo",
+    "addMember": "+ Miembro",
+    "memberNamePlaceholder": "Nombre",
+    "quality": "Fortaleza",
+    "flaw": "Debilidad",
+    "traitNone": "—",
+    "remove": "Eliminar",
+    "synergyTitle": "Sinergia (por pares)",
+    "backlogTitle": "Backlog inicial",
+    "addCard": "+ Tarjeta",
+    "tableTitle": "Título",
+    "tablePoints": "Puntos",
+    "tableCollab": "Colab.",
+    "tableAssignees": "Asignados",
+    "paramsTitle": "Parámetros de simulación",
+    "hypothesisTitle": "Hipótesis / reglas",
+    "hypothesisBody": "Cada miembro define un intervalo (mín–máx) de puntos de entrega por día hábil; cada día se sortea un entero uniforme en ese intervalo. Solo después se aplican multiplicadores: columna de especialidad (~×2 + rasgos), luego bonos globales de papel (p. ej. Tech Lead). Sin intervalo, se usa el legado 1…máx. del dado (máx. afectado por rasgos). En Dev, las tarjetas colaborativas usan sinergia y rasgos del par. Los handoffs usan γ y rasgos; sinergia baja aumenta el retrabajo; Scrum Master reduce el retrabajo en handoffs para todo el equipo. En días de Daily y Sprint Review puede ocurrir un evento aleatorio (enfermedad, vacaciones, etc.) según la probabilidad configurada — ver la lista en la partida.",
+    "deliveryRange": "Entrega diaria (mín — máx)",
+    "deliveryHint": "Sorteo uniforme cada día en ese intervalo; los multiplicadores de especialista y papel se aplican después (tope diario en el motor).",
+    "jobRole": "Papel (opcional)",
+    "startGame": "Iniciar partida",
+    "defaults": {
+      "newMemberName": "Nuevo miembro",
+      "newStoryTitle": "Nueva historia"
+    },
+    "memberSynergy": {
+      "byPersonTitle": "Sinergia por persona",
+      "byPersonHint": "Valor por pares con cada compañero. Desmarca «Bi-dir.» para definir sentido (yo → otro) en cada ficha; los handoffs usan solo la visión del remitente; la colaboración usa la media de ambos sentidos.",
+      "bidirectional": "Bi-dir.",
+      "byRoleTitle": "Sinergia por cargo",
+      "byRoleHint": "Ajuste extra al trabajar con cualquiera de ese rol (se suma a la sinergia del par; total acotado a −1…+1).",
+      "withRole": "Con {{role}}",
+      "needAnotherMember": "Añade otro miembro para editar sinergia por persona."
+    },
+    "params": {
+      "daysPerSprint": "Días por sprint",
+      "numSprints": "N.º de sprints",
+      "seed": "Semilla (reproducibilidad)",
+      "wipPerColumn": "WIP por columna",
+      "planningPullMax": "Máx. tarjetas en Planning",
+      "synergyBeta": "β (sinergia colaboración)",
+      "synergyGamma": "γ (sinergia handoff)",
+      "dailyRandomEventChance": "Probabilidad de evento aleatorio/día (Daily y Review)"
+    }
+  },
+  "errors": {
+    "atLeastOneMember": "Define al menos un miembro.",
+    "collabTwoAssignees": "La tarjeta colaborativa «{{title}}» necesita 2 asignados.",
+    "cardOneAssignee": "La tarjeta «{{title}}» necesita al menos 1 asignado."
+  },
+  "synergy": {
+    "needTwoMembers": "Añade al menos dos miembros para editar la sinergia.",
+    "hint": "Valores entre −1 (fricción) y +1 (alineación). Se usan en colaboración en Dev y en handoffs entre etapas.",
+    "matrixSyncedWithMemberCards": "La matriz de abajo es la misma sinergia por persona que en la ficha de cada miembro.",
+    "matrixAsymmetricHint": "Par no bidireccional: ajusta los valores en las fichas (yo → compañero).",
+    "matrixAsymmetricBadge": "asimétrico",
+    "pairHeader": "Par",
+    "valueHeader": "Sinergia"
+  },
+  "kanban": {
+    "pts": "pts",
+    "remaining": "restante",
+    "collabShort": "colab"
+  },
+  "cfd": {
+    "title": "Diagrama de flujo acumulativo (CFD)",
+    "empty": "Avanza días para ver el CFD."
+  },
+  "cycleTime": {
+    "title": "Cycle time (Ready → Deploy)",
+    "empty": "Aún no hay tarjetas en Deploy.",
+    "mean": "Media",
+    "median": "Mediana",
+    "days": "días",
+    "rowItem": "{{title}}: {{days}} días"
+  },
+  "ceremonies": {
+    "sprint_planning": "Sprint Planning",
+    "daily_scrum": "Daily Scrum",
+    "sprint_review": "Sprint Review",
+    "retrospective": "Retrospectiva"
+  },
+  "play": {
+    "title": "Partida",
+    "metaLine": "Semilla {{seed}} · {{daysPerSprint}} días/sprint · {{numSprints}} sprints",
+    "exportResult": "Exportar resultado JSON",
+    "resetMatch": "Reiniciar partida",
+    "backToSetup": "Volver al setup",
+    "globalDay": "Día global {{day}}",
+    "sprintBadge": "Sprint {{n}}",
+    "dayBadge": "Día {{n}}",
+    "calendarHint": "Avanza un día para comenzar el calendario.",
+    "advanceOneDay": "Avanzar 1 día",
+    "advanceSprint": "Avanzar hasta después de la Retrospectiva",
+    "runAll": "Simular todos los sprints",
+    "lastDayEvents": "Eventos del último día",
+    "dayModal": {
+      "title": "Resumen del día",
+      "close": "Cerrar",
+      "randomEvents": "Acontecimientos del día",
+      "capacityTitle": "Sorteo y capacidad efectiva",
+      "colMember": "Miembro",
+      "colRoll": "Sorteo base",
+      "colEffective": "Capacidad efectiva",
+      "boardTitle": "Tarjetas por columna (fin del día)",
+      "logTitle": "Registro del motor"
+    }
+  },
+  "dailyEvents": {
+    "catalogTitle": "Acontecimientos aleatorios (días hábiles)",
+    "catalogIntro": "En días de Daily Scrum y Sprint Review, con la probabilidad definida en el setup, puede ocurrir un evento por día. Se aplica a la capacidad efectiva tras el sorteo base, el multiplicador de especialista y los bonos de papel.",
+    "weightLabel": "Peso en el sorteo: {{w}}",
+    "member_sick": {
+      "name": "Miembro enfermo",
+      "effect": "Capacidad efectiva del día = 0 para el miembro sorteado (no aporta puntos ese día)."
+    },
+    "member_vacation": {
+      "name": "Vacaciones / ausencia",
+      "effect": "Capacidad efectiva del día = 0 para el miembro sorteado (ausencia planificada)."
+    },
+    "member_half_day": {
+      "name": "Media jornada",
+      "effect": "Capacidad efectiva del día ×0,5 para el miembro sorteado."
+    },
+    "team_meeting": {
+      "name": "Reuniones de alineación",
+      "effect": "Todos: capacidad efectiva ×0,65 (día con muchas interrupciones)."
+    },
+    "infrastructure_outage": {
+      "name": "Incidente de infra",
+      "effect": "Todos: capacidad efectiva ×0,78 (CI, VPN o entorno inestable)."
+    },
+    "good_vibes_break": {
+      "name": "Buen clima / pausa productiva",
+      "effect": "Todos: capacidad efectiva ×1,12 (hasta el tope diario del motor)."
+    }
+  },
+  "engine": {
+    "reworkHandoff": "Retrabajo en handoff ({{from}} → {{to}}) en la tarjeta «{{title}}».",
+    "pullReadyAnalise": "Pull Ready → Análisis: {{title}}.",
+    "planningToReady": "Planning: {{title}} → Ready.",
+    "sprintReviewDay": "Sprint Review: último día hábil del sprint.",
+    "retroNarrative": "Retrospectiva: reflexión del equipo (sin efecto mecánico en v1).",
+    "dailyEventMemberSick": "Evento: {{memberName}} enfermo — sin capacidad hoy.",
+    "dailyEventMemberVacation": "Evento: {{memberName}} ausente (vacaciones o similar) — sin capacidad hoy.",
+    "dailyEventMemberHalfDay": "Evento: {{memberName}} en media jornada — capacidad reducida.",
+    "dailyEventTeamMeeting": "Evento: día de reuniones — capacidad del equipo reducida.",
+    "dailyEventOutage": "Evento: incidente de infraestructura — capacidad del equipo reducida.",
+    "dailyEventGoodVibes": "Evento: buen ambiente — pequeño aumento de capacidad para todos."
+  },
+  "traits": {
+    "comunicador": {
+      "name": "Comunicador",
+      "description": "Facilita el alineamiento entre etapas.",
+      "gameEffect": "+0,08 al multiplicador de handoff (menos fricción entre etapas)."
+    },
+    "mentor": {
+      "name": "Mentor",
+      "description": "Ayuda a la pareja en trabajo colaborativo.",
+      "gameEffect": "+0,06 al multiplicador de colaboración en Dev."
+    },
+    "veterano": {
+      "name": "Veterano",
+      "description": "Dominio técnico en la especialidad.",
+      "gameEffect": "+0,25 al bono de especialista (el multiplicador base sigue en 2)."
+    },
+    "hiperfoco": {
+      "name": "Hiperfoco",
+      "description": "Pierde eficiencia al dividir la atención.",
+      "gameEffect": "−1 al máximo del dado (tope menor de throughput diario)."
+    },
+    "evita_conflito": {
+      "name": "Evita el conflicto",
+      "description": "Retiene dudas cuando la dinámica con la pareja es mala.",
+      "gameEffect": "−0,08 al multiplicador de colaboración en Dev."
+    },
+    "silos": {
+      "name": "Mentalidad de silo",
+      "description": "Dificulta el pase de testigo.",
+      "gameEffect": "−0,10 al multiplicador de handoff."
+    }
+  },
+  "scenario": {
+    "members": { "ana": "Ana", "bruno": "Bruno", "carla": "Carla" },
+    "cards": {
+      "api": "API de pedidos",
+      "checkout": "Checkout colaborativo",
+      "report": "Informe de QA",
+      "dashboard": "Panel admin"
+    }
+  }
+}

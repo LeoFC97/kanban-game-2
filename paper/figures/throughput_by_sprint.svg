@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="280" viewBox="0 0 640 280">
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <text x="48" y="20" font-size="14" font-weight="bold">Throughput por sprint (cartões concluídos)</text>
+  <line x1="48" y1="236" x2="620" y2="236" stroke="#333"/>
+  <line x1="48" y1="32" x2="48" y2="236" stroke="#333"/>
+  <polyline fill="none" stroke="#3949ab" stroke-width="2.5" points="48.0,32.0 111.6,202.0 175.1,236.0 238.7,236.0 302.2,236.0 365.8,236.0 429.3,236.0 492.9,236.0 556.4,236.0 620.0,236.0" />
+<polyline fill="none" stroke="#00897b" stroke-width="2.5" points="48.0,32.0 111.6,202.0 175.1,236.0 238.7,236.0 302.2,236.0 365.8,236.0 429.3,236.0 492.9,236.0 556.4,236.0 620.0,236.0" />
+<polyline fill="none" stroke="#e53935" stroke-width="2.5" points="48.0,32.0 111.6,202.0 175.1,236.0 238.7,236.0 302.2,236.0 365.8,236.0 429.3,236.0 492.9,236.0 556.4,236.0 620.0,236.0" />
+<polyline fill="none" stroke="#fb8c00" stroke-width="2.5" points="48.0,32.0 111.6,202.0 175.1,236.0 238.7,236.0 302.2,236.0 365.8,236.0 429.3,236.0 492.9,236.0 556.4,236.0 620.0,236.0" />
+  <text x="48" y="268" font-size="11" fill="#3949ab">A</text>
+<text x="136" y="268" font-size="11" fill="#00897b">B</text>
+<text x="224" y="268" font-size="11" fill="#e53935">C</text>
+<text x="312" y="268" font-size="11" fill="#fb8c00">D</text>
+</svg>
