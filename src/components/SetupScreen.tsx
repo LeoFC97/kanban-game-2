@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Card, GameConfig, Member, SimulationParams, Specialty } from '../simulation/types';
+import type { Card, GameConfig, Member, SimulationParams, Specialty, TaskKind } from '../simulation/types';
+import { mergeSpecialtyByTaskKind, TASK_KINDS } from '../simulation/taskKinds';
 import { JOB_ROLES } from '../simulation/rolesCatalog';
 import { TRAITS } from '../simulation/traitsCatalog';
 import { diceMaxForMember, ensureSynergyKeys } from '../simulation/engine';
@@ -55,11 +56,11 @@ export function SetupScreen({ value, onChange, onStart }: Props) {
   const errors: string[] = [];
   if (value.members.length === 0) errors.push(t('errors.atLeastOneMember'));
   for (const c of value.backlogCards) {
-    if (c.collaborative && c.assigneeIds.length < 2) {
-      errors.push(t('errors.collabTwoAssignees', { title: c.title }));
-    }
-    if (!c.collaborative && c.assigneeIds.length < 1) {
+    if (c.assigneeIds.length < 1) {
       errors.push(t('errors.cardOneAssignee', { title: c.title }));
+    }
+    if (c.assigneeIds.length >= 2 && c.assigneeIds[0] === c.assigneeIds[1]) {
+      errors.push(t('errors.assigneesMustBeDistinct', { title: c.title }));
     }
   }
 
@@ -178,14 +179,26 @@ export function SetupScreen({ value, onChange, onStart }: Props) {
     onChange({ ...value, backlogCards: value.backlogCards.filter((_, j) => j !== i) });
   }
 
+  function patchTaskKindSpecialty(kind: TaskKind, sp: Specialty) {
+    onChange({
+      ...value,
+      specialtyByTaskKind: { ...(value.specialtyByTaskKind ?? {}), [kind]: sp },
+    });
+  }
+
   function addCard() {
     const id = `c-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    const roughDaysPerSprint = value.params.daysPerSprint + 2;
+    const roughLastDay = Math.max(roughDaysPerSprint, value.params.numSprints * roughDaysPerSprint);
     const card: Card = {
       id,
       title: t('setup.defaults.newStoryTitle'),
       points: 5,
-      collaborative: false,
-      assigneeIds: memberIds[0] ? [memberIds[0]] : [],
+      taskKind: 'backend',
+      assigneeIds:
+        memberIds.length >= 2 ? [memberIds[0]!, memberIds[1]!] : memberIds[0] ? [memberIds[0]] : [],
+      businessValue: 8000,
+      dueGlobalDay: Math.max(5, roughLastDay - 8),
     };
     onChange({ ...value, backlogCards: [...value.backlogCards, card] });
   }
@@ -338,6 +351,42 @@ export function SetupScreen({ value, onChange, onStart }: Props) {
       </section>
 
       <section className="panel">
+        <h2>{t('setup.taskKindMappingTitle')}</h2>
+        <p className="muted small task-kind-mapping-intro">{t('setup.taskKindMappingHint')}</p>
+        <table className="data-table task-kind-mapping-table">
+          <thead>
+            <tr>
+              <th>{t('setup.tableTaskKind')}</th>
+              <th>{t('setup.tableSpecialistCargo')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {TASK_KINDS.map((k) => {
+              const smap = mergeSpecialtyByTaskKind(value);
+              return (
+                <tr key={k}>
+                  <td>{t(`taskKind.${k}`)}</td>
+                  <td>
+                    <select
+                      className="input"
+                      value={smap[k]}
+                      onChange={(e) => patchTaskKindSpecialty(k, e.target.value as Specialty)}
+                    >
+                      {SPECIALTIES.map((s) => (
+                        <option key={s} value={s}>
+                          {t(`specialty.${s}`)}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </section>
+
+      <section className="panel">
         <h2>{t('setup.backlogTitle')}</h2>
         <button type="button" className="btn secondary" onClick={addCard}>
           {t('setup.addCard')}
@@ -346,8 +395,10 @@ export function SetupScreen({ value, onChange, onStart }: Props) {
           <thead>
             <tr>
               <th>{t('setup.tableTitle')}</th>
+              <th>{t('setup.tableTaskKind')}</th>
               <th>{t('setup.tablePoints')}</th>
-              <th>{t('setup.tableCollab')}</th>
+              <th>{t('setup.tableBusinessValue')}</th>
+              <th>{t('setup.tableDueGlobalDay')}</th>
               <th>{t('setup.tableAssignees')}</th>
               <th />
             </tr>
@@ -363,6 +414,19 @@ export function SetupScreen({ value, onChange, onStart }: Props) {
                   />
                 </td>
                 <td>
+                  <select
+                    className="input narrow"
+                    value={c.taskKind ?? 'backend'}
+                    onChange={(e) => patchCard(i, { taskKind: e.target.value as TaskKind })}
+                  >
+                    {TASK_KINDS.map((k) => (
+                      <option key={k} value={k}>
+                        {t(`taskKind.${k}`)}
+                      </option>
+                    ))}
+                  </select>
+                </td>
+                <td>
                   <input
                     type="number"
                     min={1}
@@ -373,50 +437,45 @@ export function SetupScreen({ value, onChange, onStart }: Props) {
                 </td>
                 <td>
                   <input
-                    type="checkbox"
-                    checked={c.collaborative}
-                    onChange={(e) => patchCard(i, { collaborative: e.target.checked })}
+                    type="number"
+                    min={0}
+                    step={100}
+                    className="input narrow"
+                    value={c.businessValue ?? 0}
+                    onChange={(e) =>
+                      patchCard(i, { businessValue: Math.max(0, Math.round(Number(e.target.value) || 0)) })
+                    }
                   />
                 </td>
                 <td>
-                  {c.collaborative ? (
-                    <div className="assignee-row">
-                      <select
-                        className="input"
-                        value={c.assigneeIds[0] ?? ''}
-                        onChange={(e) => {
-                          const a = e.target.value;
-                          const b = c.assigneeIds[1] ?? memberIds[1] ?? a;
-                          patchCard(i, { assigneeIds: [a, b] });
-                        }}
-                      >
-                        {value.members.map((mem) => (
-                          <option key={mem.id} value={mem.id}>
-                            {mem.name}
-                          </option>
-                        ))}
-                      </select>
-                      <select
-                        className="input"
-                        value={c.assigneeIds[1] ?? ''}
-                        onChange={(e) => {
-                          const b = e.target.value;
-                          const a = c.assigneeIds[0] ?? memberIds[0];
-                          patchCard(i, { assigneeIds: [a, b] });
-                        }}
-                      >
-                        {value.members.map((mem) => (
-                          <option key={mem.id} value={mem.id}>
-                            {mem.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  ) : (
+                  <input
+                    type="number"
+                    min={1}
+                    className="input narrow"
+                    title={t('setup.tableDueGlobalDayHint')}
+                    value={c.dueGlobalDay ?? ''}
+                    placeholder="—"
+                    onChange={(e) => {
+                      const raw = e.target.value.trim();
+                      if (raw === '') {
+                        patchCard(i, { dueGlobalDay: undefined });
+                        return;
+                      }
+                      patchCard(i, { dueGlobalDay: Math.max(1, Math.round(Number(raw) || 1)) });
+                    }}
+                  />
+                </td>
+                <td>
+                  <div className="assignee-row">
                     <select
                       className="input"
                       value={c.assigneeIds[0] ?? ''}
-                      onChange={(e) => patchCard(i, { assigneeIds: [e.target.value] })}
+                      onChange={(e) => {
+                        const a = e.target.value;
+                        const b = c.assigneeIds[1];
+                        if (b && b !== a) patchCard(i, { assigneeIds: [a, b] });
+                        else patchCard(i, { assigneeIds: a ? [a] : [] });
+                      }}
                     >
                       {value.members.map((mem) => (
                         <option key={mem.id} value={mem.id}>
@@ -424,7 +483,24 @@ export function SetupScreen({ value, onChange, onStart }: Props) {
                         </option>
                       ))}
                     </select>
-                  )}
+                    <select
+                      className="input"
+                      value={c.assigneeIds[1] ?? ''}
+                      onChange={(e) => {
+                        const b = e.target.value;
+                        const a = c.assigneeIds[0] ?? memberIds[0] ?? '';
+                        if (!b) patchCard(i, { assigneeIds: a ? [a] : [] });
+                        else patchCard(i, { assigneeIds: a ? [a, b] : [b] });
+                      }}
+                    >
+                      <option value="">{t('setup.assigneeOptional')}</option>
+                      {value.members.map((mem) => (
+                        <option key={mem.id} value={mem.id}>
+                          {mem.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </td>
                 <td>
                   <button type="button" className="btn danger small" onClick={() => removeCard(i)}>
@@ -527,6 +603,51 @@ export function SetupScreen({ value, onChange, onStart }: Props) {
                   dailyRandomEventChance: Math.min(
                     1,
                     Math.max(0, Number(e.target.value) || 0),
+                  ),
+                })
+              }
+            />
+          </label>
+          <label>
+            {t('setup.params.financialLateFlatPenalty')}
+            <input
+              type="number"
+              min={0}
+              step={50}
+              className="input"
+              value={value.params.financialLateFlatPenalty ?? 800}
+              onChange={(e) =>
+                patchParams({ financialLateFlatPenalty: Math.max(0, Number(e.target.value) || 0) })
+              }
+            />
+          </label>
+          <label>
+            {t('setup.params.financialLatePerDayPenalty')}
+            <input
+              type="number"
+              min={0}
+              step={50}
+              className="input"
+              value={value.params.financialLatePerDayPenalty ?? 250}
+              onChange={(e) =>
+                patchParams({ financialLatePerDayPenalty: Math.max(0, Number(e.target.value) || 0) })
+              }
+            />
+          </label>
+          <label>
+            {t('setup.params.financialNotDeliveredMultiplier')}
+            <input
+              type="number"
+              min={0}
+              max={3}
+              step={0.1}
+              className="input"
+              value={value.params.financialNotDeliveredMultiplier ?? 1}
+              onChange={(e) =>
+                patchParams({
+                  financialNotDeliveredMultiplier: Math.min(
+                    3,
+                    Math.max(0, Number(e.target.value) || 1),
                   ),
                 })
               }

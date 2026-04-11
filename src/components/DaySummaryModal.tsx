@@ -22,6 +22,11 @@ export function DaySummaryModal({ log, members, onClose }: Props) {
 
   const memberById = (id: string) => members.find((m) => m.id === id);
 
+  const hasCapacitySteps = !!(
+    log.capacityBreakdownByMemberId &&
+    Object.keys(log.capacityBreakdownByMemberId).length > 0
+  );
+
   return (
     <div
       className="modal-backdrop"
@@ -77,24 +82,70 @@ export function DaySummaryModal({ log, members, onClose }: Props) {
             members.length > 0 && (
               <section className="day-modal-section">
                 <h3>{t('play.dayModal.capacityTitle')}</h3>
-                <table className="day-modal-table">
-                  <thead>
-                    <tr>
-                      <th>{t('play.dayModal.colMember')}</th>
-                      <th>{t('play.dayModal.colRoll')}</th>
-                      <th>{t('play.dayModal.colEffective')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {members.map((m) => (
-                      <tr key={m.id}>
-                        <td>{m.name}</td>
-                        <td>{log.diceByMemberId[m.id] ?? '—'}</td>
-                        <td>{log.effectiveCapacityByMemberId[m.id] ?? '—'}</td>
+                <p className="day-modal-footnote muted">{t('play.dayModal.capacityMultFootnote')}</p>
+                <div className="day-modal-table-wrap">
+                  <table className="day-modal-table">
+                    <thead>
+                      <tr>
+                        <th>{t('play.dayModal.colMember')}</th>
+                        <th>{t('play.dayModal.colRoll')}</th>
+                        {hasCapacitySteps ? (
+                          <>
+                            <th>{t('play.dayModal.colAfterSpecialist')}</th>
+                            <th>{t('play.dayModal.colAfterRoles')}</th>
+                            <th>{t('play.dayModal.colAfterDaily')}</th>
+                          </>
+                        ) : null}
+                        <th>{t('play.dayModal.colEffective')}</th>
+                        <th>{t('play.dayModal.colDeltaVsBase')}</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {members.map((m) => {
+                        const base = log.diceByMemberId[m.id];
+                        const eff = log.effectiveCapacityByMemberId[m.id];
+                        const bd = log.capacityBreakdownByMemberId?.[m.id];
+                        const delta =
+                          typeof base === 'number' && typeof eff === 'number' ? eff - base : null;
+                        return (
+                          <tr key={m.id}>
+                            <td>{m.name}</td>
+                            <td>{base ?? '—'}</td>
+                            {hasCapacitySteps ? (
+                              bd ? (
+                                <>
+                                  <td>{bd.afterSpecialist}</td>
+                                  <td>{bd.afterRoleBonus}</td>
+                                  <td>{bd.afterDailyEvent}</td>
+                                </>
+                              ) : (
+                                <>
+                                  <td>—</td>
+                                  <td>—</td>
+                                  <td>—</td>
+                                </>
+                              )
+                            ) : null}
+                            <td>{eff ?? '—'}</td>
+                            <td
+                              className={
+                                delta === null
+                                  ? 'day-modal-delta'
+                                  : delta > 0
+                                    ? 'day-modal-delta day-modal-delta-pos'
+                                    : delta < 0
+                                      ? 'day-modal-delta day-modal-delta-neg'
+                                      : 'day-modal-delta day-modal-delta-zero'
+                              }
+                            >
+                              {delta === null ? '—' : delta > 0 ? `+${delta}` : String(delta)}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </section>
             )}
 

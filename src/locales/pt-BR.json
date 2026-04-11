@@ -6,6 +6,7 @@
     "loadPreset": "Carregar preset",
     "exportJson": "Exportar JSON",
     "importJson": "Importar JSON",
+    "about": "Sobre",
     "language": "Idioma"
   },
   "languages": {
@@ -31,6 +32,13 @@
     "Desenvolvedor": "Desenvolvedor",
     "Testador": "Testador"
   },
+  "taskKind": {
+    "backend": "Backend",
+    "frontend": "Frontend",
+    "infrastructure": "Infra",
+    "design": "Design",
+    "data": "Dados"
+  },
   "jobRoles": {
     "tech_lead": {
       "name": "Tech Lead",
@@ -55,12 +63,19 @@
     "backlogTitle": "Backlog inicial",
     "addCard": "+ Cartão",
     "tableTitle": "Título",
+    "tableTaskKind": "Tipo",
+    "tableSpecialistCargo": "Especialista (cargo)",
+    "taskKindMappingTitle": "Tipo de tarefa → especialista no quadro",
+    "taskKindMappingHint": "Define qual cargo (Analista / Dev / Testador) representa o especialista de cada tipo de tarefa. Em handoffs, se houver vários assignees com o mesmo cargo da etapa, o motor prefere quem coincide com este mapeamento.",
     "tablePoints": "Pontos",
-    "tableCollab": "Colab.",
+    "tableBusinessValue": "Valor ($)",
+    "tableDueGlobalDay": "Prazo (dia)",
+    "tableDueGlobalDayHint": "Dia global inclusivo: deploy até este dia evita penalidade por atraso. Vazio = sem prazo.",
     "tableAssignees": "Assignees",
+    "assigneeOptional": "2.ª pessoa (opcional)",
     "paramsTitle": "Parâmetros da simulação",
     "hypothesisTitle": "Hipótese / regras",
-    "hypothesisBody": "Cada membro define um intervalo (mín–máx) de pontos de entrega por dia útil; em cada dia sorteia-se um inteiro uniforme nesse intervalo. Só depois se aplicam multiplicadores: coluna de especialidade (~×2 + traços), depois bónus globais de papéis (ex.: Tech Lead). Sem intervalo definido, usa-se o legado 1…máx. do dado (máx. afetado por traços). Em Dev, cartões colaborativos usam sinergia e traços do par. Handoffs usam γ e traços; sinergia baixa aumenta retrabalho; Scrum Master reduz retrabalho em handoffs em toda a equipa. Em dias de Daily e Sprint Review pode ocorrer um evento aleatório (doença, férias, etc.) conforme a probabilidade configurada — ver lista na partida.",
+    "hypothesisBody": "Cada membro define um intervalo (mín–máx) de pontos de entrega por dia útil; em cada dia sorteia-se um inteiro uniforme nesse intervalo. Só depois se aplicam multiplicadores: coluna de especialidade (~×2 + traços), depois bónus globais de papéis (ex.: Tech Lead). Sem intervalo definido, usa-se o legado 1…máx. do dado (máx. afetado por traços). Em Dev, cartões com duas pessoas atribuídas usam sinergia e traços do par. Handoffs usam γ e traços; sinergia baixa aumenta retrabalho; Scrum Master reduz retrabalho em handoffs em toda a equipa. Em dias de Daily e Sprint Review pode ocorrer um evento aleatório (doença, férias, etc.) conforme a probabilidade configurada — ver lista na partida. Cada tarefa pode ter valor de negócio e prazo (dia global); no fim da partida o relatório financeiro soma o líquido com penalidades por atraso ou não entrega.",
     "deliveryRange": "Entrega diária (mín — máx)",
     "deliveryHint": "Sorteio uniforme por dia nesse intervalo; multiplicadores de especialista e papéis aplicam-se em seguida (teto diário no motor).",
     "jobRole": "Papel (opcional)",
@@ -86,12 +101,15 @@
       "planningPullMax": "Máx. cartões no Planning",
       "synergyBeta": "β (sinergia colaboração)",
       "synergyGamma": "γ (sinergia handoff)",
-      "dailyRandomEventChance": "Probabilidade de evento aleatório/dia (Daily e Review)"
+      "dailyRandomEventChance": "Probabilidade de evento aleatório/dia (Daily e Review)",
+      "financialLateFlatPenalty": "Penalidade fixa (atraso)",
+      "financialLatePerDayPenalty": "Penalidade por dia de atraso",
+      "financialNotDeliveredMultiplier": "Mult. não entregue (× valor)"
     }
   },
   "errors": {
     "atLeastOneMember": "Defina pelo menos um membro.",
-    "collabTwoAssignees": "Cartão colaborativo \"{{title}}\" precisa de 2 assignees.",
+    "assigneesMustBeDistinct": "O cartão \"{{title}}\" não pode repetir a mesma pessoa nos dois assignees.",
     "cardOneAssignee": "Cartão \"{{title}}\" precisa de pelo menos 1 assignee."
   },
   "synergy": {
@@ -106,11 +124,55 @@
   "kanban": {
     "pts": "pts",
     "remaining": "restante",
-    "collabShort": "colab"
+    "collabShort": "colab",
+    "financialValue": "valor {{v}}",
+    "financialDue": "prazo dia {{day}}",
+    "idleTitle": "À espera (sem cartão no fluxo)",
+    "idleNone": "Ninguém — toda a equipa tem cartão fora do backlog."
   },
   "cfd": {
     "title": "Diagrama de fluxo cumulativo (CFD)",
     "empty": "Rode dias para ver o CFD."
+  },
+  "financial": {
+    "currencyCode": "BRL",
+    "title": "Resultado financeiro",
+    "emptyHint": "Defina valor de negócio nos cartões no setup para ver este relatório.",
+    "totalPotential": "Valor total alvo",
+    "totalNet": "Resultado líquido",
+    "countsLine": "Cartões com valor",
+    "countOnTime": "{{n}} no prazo",
+    "countLate": "{{n}} atrasadas",
+    "countNotDone": "{{n}} não entregues",
+    "colTitle": "Tarefa",
+    "colValue": "Valor",
+    "colDue": "Prazo (dia global)",
+    "colDeployed": "Deploy (dia)",
+    "colStatus": "Estado",
+    "colPenalty": "Penalidade",
+    "colNet": "Líquido",
+    "status": {
+      "on_time": "No prazo",
+      "late": "Atrasada",
+      "not_done": "Não entregue"
+    },
+    "chartsTitle": "Gráficos financeiros",
+    "chartKindLabel": "Tipo de gráfico",
+    "chartKind": {
+      "perCard": "Valor alvo vs líquido por tarefa",
+      "cumulative": "Resultado líquido acumulado",
+      "statusPie": "Distribuição por estado"
+    },
+    "chartHint": {
+      "perCard": "Barras cinzentas: valor se tudo ocorresse no prazo; barras coloridas: líquido após prazo e penalidades.",
+      "cumulative": "Soma do líquido dos deploys por dia; no último dia inclui perdas de tarefas não entregues.",
+      "statusPie": "Quantidade de tarefas com valor > 0 em cada estado (após a simulação)."
+    },
+    "seriesTarget": "Valor alvo",
+    "seriesNet": "Líquido",
+    "seriesCumulative": "Líquido acumulado",
+    "tooltipDay": "Dia {{day}}",
+    "pieEmpty": "Sem dados para o gráfico circular."
   },
   "cycleTime": {
     "title": "Cycle time (Ready → Deploy)",
@@ -136,6 +198,11 @@
     "sprintBadge": "Sprint {{n}}",
     "dayBadge": "Dia {{n}}",
     "calendarHint": "Avance um dia para começar o calendário.",
+    "kanbanAssigneesHint": "Responsáveis: editáveis em todas as colunas exceto Deploy (lá o cartão está concluído no quadro).",
+    "assigneeReadOnlyDeploy": "Não é possível alterar assignees em Deploy para «{{title}}».",
+    "assigneeUnknownCard": "Cartão não encontrado no quadro.",
+    "allocationBlocked": "Não é possível avançar o dia: estes membros não estão em nenhum cartão do quadro: {{names}}.",
+    "allocationBlockedHint": "Atribua cada pessoa como responsável em pelo menos um cartão (em qualquer coluna) antes de continuar.",
     "advanceOneDay": "Avançar 1 dia",
     "advanceSprint": "Avançar até após Retrospectiva",
     "runAll": "Simular todos os sprints",
@@ -145,9 +212,14 @@
       "close": "Fechar",
       "randomEvents": "Acontecimentos do dia",
       "capacityTitle": "Entrega e capacidade efetiva",
+      "capacityMultFootnote": "Ordem dos multiplicadores: sorteio base → coluna de especialidade (~×2 + traços) → papéis globais (ex.: Tech Lead) → evento aleatório do dia (se alterar capacidade). A coluna «Δ vs sorteio» é a diferença face ao sorteio inicial.",
       "colMember": "Membro",
       "colRoll": "Sorteio base",
+      "colAfterSpecialist": "Pós mult. coluna",
+      "colAfterRoles": "Pós papéis",
+      "colAfterDaily": "Pós evento",
       "colEffective": "Capacidade efetiva",
+      "colDeltaVsBase": "Δ vs sorteio",
       "boardTitle": "Cartões por coluna (fim do dia)",
       "logTitle": "Registo do motor"
     }
@@ -226,11 +298,67 @@
       "gameEffect": "−0,10 no multiplicador de handoff."
     }
   },
+  "about": {
+    "title": "Sobre o modelo",
+    "lede": "Fórmulas e regras numéricas usadas pelo motor de simulação (ver `src/simulation/`). Os arredondamentos e tetos coincidem com o código TypeScript.",
+    "close": "Voltar",
+    "sections": {
+      "points": {
+        "title": "Pontos por coluna de trabalho",
+        "body": "Cada cartão com P story points reparte esforço em Análise, Dev e Teste antes da simulação.",
+        "formula": "w_a = max(1, round(0,3·P))\nw_d = max(1, round(0,5·P))\nw_t = P − w_a − w_d\n\n(ajustes no código garantem w_t ≥ 1 e soma = P.)"
+      },
+      "dailyCapacity": {
+        "title": "Capacidade diária por membro",
+        "body": "Sorteio uniforme da entrega base no intervalo do membro; em seguida multiplicador de especialista (se a coluna do cargo tem trabalho), bónus global por papel no cargo, e multiplicador do evento aleatório do dia.",
+        "formula1": "N_reserva = clamp(6 + Δ_dado, 2, 8)\n[L, U] = deliveryMin/Max arredondados e limitados a [1, 30], com L ≤ U\nB ~ inteiro uniforme em [L, U]",
+        "formula2": "E = clamp(2 + Δ_esp, 1,25, 3,5)\nC₁ = min(48, round(B · E))   (só na coluna da especialidade, se houver cartão com trabalho)",
+        "formula3": "g = min(0,75, Σ bónus de papéis para aquele cargo)\nC₂ = min(48, round(C₁ · (1 + g)))",
+        "formula4": "C_final = min(48, max(0, round(C₂ · m)))\n\nm = multiplicador do evento do dia (1 se ausente)."
+      },
+      "devSpend": {
+        "title": "Consumo de capacidade em Dev (dois assignees)",
+        "body": "Com dois responsáveis distintos, a coluna Dev aplica um multiplicador M à eficácia do esforço bruto gasto no cartão.",
+        "formula1": "s = resolveSynergy(modo colaboração, par de assignees)\nτ = Σ Δ_colab dos traços dos dois\nM = clamp(1 + β·s + τ, M_min, M_max)",
+        "formula2": "Para cada cartão (ordem da coluna):\n  u = min(cap_restante_membro, remaining / M)\n  remaining ← max(0, remaining − u·M)"
+      },
+      "synergy": {
+        "title": "Sinergia entre dois membros",
+        "body": "Matriz simétrica ou valores dirigidos; ajustes opcionais por tipo de cargo do par; resultado em [−1, 1].",
+        "formula1": "Colaboração, par assimétrico, ambas direções definidas:\n  s_base = (d_{A→B} + d_{B→A}) / 2",
+        "formula2": "Handoff, par assimétrico:\n  s_base = d_{remetente→receptor}",
+        "formula3": "s = clamp(s_base + δ(A→tipo(B)) + δ(B→tipo(A)), −1, 1)"
+      },
+      "handoff": {
+        "title": "Handoff entre etapas",
+        "body": "Entre colunas de trabalho consecutivas: multiplicador h sobre a carga da etapa seguinte e probabilidade de rework extra.",
+        "formula1": "s = resolveSynergy(modo handoff, dono_saida → dono_entrada)\nτ_h = Δ_handoff(saida) + Δ_handoff(entrada)\nh = clamp(1 + γ·s + τ_h, h_min, h_max)",
+        "formula2": "Se s < τ:\n  p₀ = clamp(0,06 + (τ − s)·0,22, 0, 0,42)\nsenão p₀ = 0\np_rw = clamp(p₀ + Δ_rework(saida) + Δ_rework(entrada) − R_SM, 0, 0,55)",
+        "formula3": "Dev ou Teste após handoff:\n  R = max(0, round(W_etapa / h)) + U\n\nU = reworkUnits se Bernoulli(p_rw), senão 0.",
+        "formula4": "Análise após handoff:\n  remaining = W_analise + U"
+      },
+      "wip": {
+        "title": "WIP efetivo por coluna",
+        "body": "Limite de cartões em Análise / Dev / Teste com correção pelos traços.",
+        "formula": "WIP_efetivo = max(1, WIP_base + round(Σ_i Δ_WIP(i)))"
+      },
+      "dailyEvents": {
+        "title": "Eventos aleatórios do dia",
+        "body": "Nos dias Daily e Sprint Review, com probabilidade configurada, pode ocorrer um evento; a capacidade do dia multiplica-se por m.",
+        "formula1": "Se U(0,1) ≥ chance → sem evento.\nSenão: escolhe-se evento k com P(k) = weight_k / Σ weight.",
+        "formula2": "C_final = min(48, max(0, round(··· · m_i)))   (m conforme o evento; ver catálogo no código.)"
+      },
+      "symbols": {
+        "title": "Notação",
+        "body": "β = synergyBeta (par em Dev), γ = synergyGamma (handoff), τ = limiar handoffReworkSynergyThreshold, M_min/M_max = collabEffMin/Max, h_min/h_max = handoffEffMin/Max, P = story points, clamp(x,a,b) = min(b, max(a,x)), R_SM = redução global de rework em handoffs (papéis, até teto)."
+      }
+    }
+  },
   "scenario": {
     "members": { "ana": "Ana", "bruno": "Bruno", "carla": "Carla" },
     "cards": {
       "api": "API de pedidos",
-      "checkout": "Checkout colaborativo",
+      "checkout": "Checkout (dupla)",
       "report": "Relatório de QA",
       "dashboard": "Dashboard admin"
     }

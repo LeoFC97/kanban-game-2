@@ -12,12 +12,26 @@ export {
   cardToBoardCard,
   diceMaxForMember,
   ensureSynergyKeys,
+  membersNotAssignedToAnyCard,
+  resolveAssigneesForCard,
   type InteractiveRunner,
+  type UpdateCardAssigneesResult,
 } from './engine';
 export * from './metrics';
+export * from './taskKinds';
 export {
   DAILY_RANDOM_EVENT_CATALOG,
   rollDailyRandomEvents,
   type DailyRandomEventId,
   type DailyRandomEventDefinition,
 } from './dailyRandomEvents';
+export {
+  buildFinancialSummary,
+  buildFinancialCumulativeSeries,
+  buildFinancialPerCardChart,
+  buildFinancialStatusPie,
+  type FinancialSummary,
+  type CardFinancialResult,
+  type FinancialCumulativePoint,
+  type FinancialCardStatus,
+} from './financial';

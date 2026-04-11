@@ -1,5 +1,8 @@
 export type Specialty = 'Analista' | 'Desenvolvedor' | 'Testador';
 
+/** Categoria de trabalho do cartão (afeta qual assignee é tratado como especialista da tarefa no motor). */
+export type TaskKind = 'backend' | 'frontend' | 'infrastructure' | 'design' | 'data';
+
 export type ColumnId =
   | 'backlog'
   | 'ready'
@@ -71,9 +74,17 @@ export interface Card {
   id: string;
   title: string;
   points: number;
-  collaborative: boolean;
-  /** 1 or 2 ids; used for synergy on Dev + handoff Dev→Teste */
+  /** Tipo de tarefa; o especialista por tipo define o cargo de referência em handoffs (entre assignees da mesma etapa). */
+  taskKind?: TaskKind;
+  /** 1 ou 2 ids; com 2 pessoas aplica-se sinergia de par em Dev. */
   assigneeIds: string[];
+  /** Valor de negócio se entregue no prazo (mesma unidade monetária da UI). */
+  businessValue?: number;
+  /**
+   * Prazo inclusivo em dia global (`DayLog.globalDay`): deploy até este dia conta como no prazo.
+   * Se omitido, não há penalidade por atraso (só por não entregar).
+   */
+  dueGlobalDay?: number;
 }
 
 export interface BoardCard extends Card {
@@ -111,6 +122,14 @@ export interface SimulationParams {
    * 0 desativa. Ver `dailyRandomEvents.ts` / lista na UI.
    */
   dailyRandomEventChance?: number;
+  /** Penalidade fixa somada quando o deploy ocorre depois de `dueGlobalDay`. */
+  financialLateFlatPenalty?: number;
+  /** Penalidade por cada dia global de atraso além do prazo. */
+  financialLatePerDayPenalty?: number;
+  /**
+   * Multiplicador sobre `businessValue` quando o cartão nunca chega a Deploy (ex.: 1 = perde o valor integral).
+   */
+  financialNotDeliveredMultiplier?: number;
 }
 
 export interface GameConfig {
@@ -125,6 +144,11 @@ export interface GameConfig {
   /** Sinergia base dirigida remetente→destinatário; usada quando o par não é bi-direcional. */
   synergyDirected?: Record<string, number>;
   backlogCards: Card[];
+  /**
+   * Por tipo de tarefa, qual cargo no quadro é o «especialista» dessa tarefa.
+   * Usado ao escolher o assignee dono de handoff quando há vários com o mesmo cargo da etapa.
+   */
+  specialtyByTaskKind?: Partial<Record<TaskKind, Specialty>>;
   params: SimulationParams;
 }
 
@@ -147,6 +171,14 @@ export interface DailyRandomEventLog {
   affectedMemberIds?: string[];
 }
 
+/** Passos de capacidade num dia útil (para o resumo no UI). */
+export interface MemberDayCapacityBreakdown {
+  afterSpecialist: number;
+  afterRoleBonus: number;
+  /** Após mult. de evento aleatório do dia (igual a `afterRoleBonus` se o mult. for 1). */
+  afterDailyEvent: number;
+}
+
 export interface DayLog {
   globalDay: number;
   sprint: number;
@@ -155,6 +187,8 @@ export interface DayLog {
   /** Sorteio base no intervalo de entrega (antes de multiplicadores de especialista / papéis). */
   diceByMemberId: Record<string, number>;
   effectiveCapacityByMemberId: Record<string, number>;
+  /** Por membro: capacidade após cada família de multiplicadores (só em dias com trabalho). */
+  capacityBreakdownByMemberId?: Record<string, MemberDayCapacityBreakdown>;
   columnCounts: Record<ColumnId, number>;
   notes: LogNote[];
   /** Eventos aleatórios do dia (só dias úteis com trabalho). */

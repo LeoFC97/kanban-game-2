@@ -1,14 +1,17 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { DayLog, GameConfig } from '../simulation/types';
-import { createInteractiveRunner } from '../simulation/engine';
+import { createInteractiveRunner, membersNotAssignedToAnyCard } from '../simulation/engine';
 import { buildCfdSeries } from '../simulation/metrics';
+import { buildFinancialSummary } from '../simulation/financial';
 import { formatLogNote } from '../i18n/formatLogNote';
 import { KanbanBoard } from './KanbanBoard';
 import { CfdChart } from './CfdChart';
 import { CycleTimeSummary } from './CycleTimeSummary';
 import { DaySummaryModal } from './DaySummaryModal';
 import { DailyEventsCatalog } from './DailyEventsCatalog';
+import { FinancialReport } from './FinancialReport';
+import { FinancialCharts } from './FinancialCharts';
 
 type Props = {
   config: GameConfig;
@@ -20,6 +23,7 @@ export function PlayScreen({ config, onBackToSetup }: Props) {
   const [runner, setRunner] = useState(() => createInteractiveRunner(config));
   const [, setTick] = useState(0);
   const [dayModalLog, setDayModalLog] = useState<DayLog | null>(null);
+  const [assigneeError, setAssigneeError] = useState<string | null>(null);
   const refresh = useCallback(() => setTick((n) => n + 1), []);
 
   const logs = runner.getLogs();
@@ -27,20 +31,62 @@ export function PlayScreen({ config, onBackToSetup }: Props) {
   const completed = runner.getCompleted();
   const lastLog = logs[logs.length - 1];
   const cfdData = buildCfdSeries(logs);
+  const financialSummary = useMemo(
+    () => buildFinancialSummary(config.backlogCards, completed, config.params),
+    [config.backlogCards, config.params, completed],
+  );
+  const lastGlobalDay = lastLog?.globalDay ?? 0;
+
+  const membersMissingFromCards = useMemo(
+    () => membersNotAssignedToAnyCard(board, config.members),
+    [board, config.members],
+  );
+  const blockAdvanceByAllocation =
+    config.members.length > 0 && membersMissingFromCards.length > 0;
+
+  const handleUpdateAssignees = useCallback(
+    (cardId: string, assigneeIds: string[]) => {
+      const r = runner.updateCardAssignees(cardId, assigneeIds);
+      if (!r.ok) {
+        setAssigneeError(t(r.errorKey, r.errorParams as Record<string, string | number> | undefined));
+        return;
+      }
+      setAssigneeError(null);
+      refresh();
+    },
+    [runner, refresh, t],
+  );
+
+  const guardAllocationOrAlert = (): boolean => {
+    const missing = membersNotAssignedToAnyCard(runner.getBoard(), config.members);
+    if (config.members.length === 0 || missing.length === 0) return true;
+    window.alert(
+      t('play.allocationBlocked', {
+        names: missing.map((m) => m.name).join(', '),
+      }),
+    );
+    return false;
+  };
 
   const advanceOne = () => {
+    setAssigneeError(null);
+    if (!guardAllocationOrAlert()) return;
     const log = runner.step();
     refresh();
     if (log) setDayModalLog(log);
   };
 
   const advanceSprint = () => {
+    setAssigneeError(null);
+    if (!guardAllocationOrAlert()) return;
     runner.advanceUntilAfterRetro();
     setDayModalLog(null);
     refresh();
   };
 
   const runAll = () => {
+    setAssigneeError(null);
+    if (!guardAllocationOrAlert()) return;
     const r = createInteractiveRunner(config);
     while (r.step()) {
       /* exhaust */
@@ -51,6 +97,7 @@ export function PlayScreen({ config, onBackToSetup }: Props) {
   };
 
   const resetMatch = () => {
+    setAssigneeError(null);
     setRunner(createInteractiveRunner(config));
     setDayModalLog(null);
     refresh();
@@ -89,6 +136,11 @@ export function PlayScreen({ config, onBackToSetup }: Props) {
                       logs: runner.getLogs(),
                       completed: runner.getCompleted(),
                       finalBoard: runner.getBoard(),
+                      financialSummary: buildFinancialSummary(
+                        config.backlogCards,
+                        runner.getCompleted(),
+                        config.params,
+                      ),
                     },
                     null,
                     2,
@@ -126,13 +178,49 @@ export function PlayScreen({ config, onBackToSetup }: Props) {
       )}
 
       <div className="play-controls">
-        <button type="button" className="btn primary" onClick={advanceOne}>
+        <button
+          type="button"
+          className="btn primary"
+          disabled={blockAdvanceByAllocation}
+          title={
+            blockAdvanceByAllocation
+              ? t('play.allocationBlocked', {
+                  names: membersMissingFromCards.map((m) => m.name).join(', '),
+                })
+              : undefined
+          }
+          onClick={advanceOne}
+        >
           {t('play.advanceOneDay')}
         </button>
-        <button type="button" className="btn secondary" onClick={advanceSprint}>
+        <button
+          type="button"
+          className="btn secondary"
+          disabled={blockAdvanceByAllocation}
+          title={
+            blockAdvanceByAllocation
+              ? t('play.allocationBlocked', {
+                  names: membersMissingFromCards.map((m) => m.name).join(', '),
+                })
+              : undefined
+          }
+          onClick={advanceSprint}
+        >
           {t('play.advanceSprint')}
         </button>
-        <button type="button" className="btn secondary" onClick={runAll}>
+        <button
+          type="button"
+          className="btn secondary"
+          disabled={blockAdvanceByAllocation}
+          title={
+            blockAdvanceByAllocation
+              ? t('play.allocationBlocked', {
+                  names: membersMissingFromCards.map((m) => m.name).join(', '),
+                })
+              : undefined
+          }
+          onClick={runAll}
+        >
           {t('play.runAll')}
         </button>
       </div>
@@ -141,7 +229,28 @@ export function PlayScreen({ config, onBackToSetup }: Props) {
 
       <div className="play-grid">
         <div className="play-main">
-          <KanbanBoard board={board} />
+          <p className="muted kanban-assignees-hint">{t('play.kanbanAssigneesHint')}</p>
+          {blockAdvanceByAllocation && (
+            <div className="assignee-error-banner" role="alert">
+              {t('play.allocationBlocked', {
+                names: membersMissingFromCards.map((m) => m.name).join(', '),
+              })}
+              <span className="allocation-banner-hint">
+                {' '}
+                {t('play.allocationBlockedHint')}
+              </span>
+            </div>
+          )}
+          {assigneeError && (
+            <div className="assignee-error-banner" role="alert">
+              {assigneeError}
+            </div>
+          )}
+          <KanbanBoard
+            board={board}
+            members={config.members}
+            onUpdateAssignees={handleUpdateAssignees}
+          />
           {lastLog && lastLog.notes.length > 0 && (
             <div className="notes-box">
               <h4>{t('play.lastDayEvents')}</h4>
@@ -157,6 +266,11 @@ export function PlayScreen({ config, onBackToSetup }: Props) {
           <CfdChart data={cfdData} />
           <CycleTimeSummary completed={completed} cardsById={board.cardsById} />
         </aside>
+      </div>
+
+      <div className="play-financial">
+        <FinancialReport summary={financialSummary} />
+        <FinancialCharts summary={financialSummary} lastGlobalDay={lastGlobalDay} />
       </div>
     </div>
   );

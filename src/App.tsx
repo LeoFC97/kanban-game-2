@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SetupScreen } from './components/SetupScreen';
 import { PlayScreen } from './components/PlayScreen';
+import { AboutScreen } from './components/AboutScreen';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
 import { defaultGameConfig, STORAGE_KEY } from './gameDefaults';
 import type { GameConfig } from './simulation/types';
@@ -26,6 +27,7 @@ export default function App() {
   const [draft, setDraft] = useState<GameConfig>(() => loadStored() ?? defaultGameConfig(getStoredLanguage()));
   const [frozenConfig, setFrozenConfig] = useState<GameConfig | null>(null);
   const [playKey, setPlayKey] = useState(0);
+  const [aboutOpen, setAboutOpen] = useState(false);
 
   const start = useCallback(() => {
     setFrozenConfig(JSON.parse(JSON.stringify(draft)) as GameConfig);
@@ -79,7 +81,15 @@ export default function App() {
         <span className="brand">{t('nav.brand')}</span>
         <div className="nav-right">
           <LanguageSwitcher />
-          {phase === 'setup' && (
+          <button
+            type="button"
+            className="btn small secondary"
+            onClick={() => setAboutOpen((v) => !v)}
+            aria-expanded={aboutOpen}
+          >
+            {aboutOpen ? t('about.close') : t('nav.about')}
+          </button>
+          {phase === 'setup' && !aboutOpen && (
             <div className="nav-actions">
               <button type="button" className="btn small secondary" onClick={applyDefaultScenario}>
                 {t('nav.defaultScenario')}
@@ -111,7 +121,9 @@ export default function App() {
         </div>
       </nav>
 
-      {phase === 'setup' ? (
+      {aboutOpen ? (
+        <AboutScreen onClose={() => setAboutOpen(false)} />
+      ) : phase === 'setup' ? (
         <SetupScreen value={draft} onChange={setDraft} onStart={start} />
       ) : frozenConfig ? (
         <PlayScreen key={playKey} config={frozenConfig} onBackToSetup={backToSetup} />

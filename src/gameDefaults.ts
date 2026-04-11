@@ -35,6 +35,9 @@ export function defaultParams(): SimulationParams {
     handoffReworkSynergyThreshold: 0.15,
     reworkUnits: 2,
     dailyRandomEventChance: 0.22,
+    financialLateFlatPenalty: 800,
+    financialLatePerDayPenalty: 250,
+    financialNotDeliveredMultiplier: 1,
   };
 }
 
@@ -67,18 +70,44 @@ export function defaultMembers(lang: AppLanguage = 'pt-BR'): Member[] {
 
 export function defaultBacklog(memberIds: string[], lang: AppLanguage = 'pt-BR'): Card[] {
   const sc = scenarioByLang[lang] ?? scenarioByLang['pt-BR'];
-  const [, b, c] = memberIds;
+  const [a, b, c] = memberIds;
   return [
-    { id: 'c1', title: sc.cards.api, points: 8, collaborative: false, assigneeIds: [b] },
+    {
+      id: 'c1',
+      title: sc.cards.api,
+      points: 8,
+      taskKind: 'backend',
+      assigneeIds: [a],
+      businessValue: 14_000,
+      dueGlobalDay: 14,
+    },
     {
       id: 'c2',
       title: sc.cards.checkout,
       points: 10,
-      collaborative: true,
+      taskKind: 'frontend',
       assigneeIds: [b, c],
+      businessValue: 22_000,
+      dueGlobalDay: 18,
     },
-    { id: 'c3', title: sc.cards.report, points: 5, collaborative: false, assigneeIds: [c] },
-    { id: 'c4', title: sc.cards.dashboard, points: 12, collaborative: false, assigneeIds: [b] },
+    {
+      id: 'c3',
+      title: sc.cards.report,
+      points: 5,
+      taskKind: 'data',
+      assigneeIds: [c],
+      businessValue: 9_000,
+      dueGlobalDay: 22,
+    },
+    {
+      id: 'c4',
+      title: sc.cards.dashboard,
+      points: 12,
+      taskKind: 'design',
+      assigneeIds: [b],
+      businessValue: 18_000,
+      dueGlobalDay: 28,
+    },
   ];
 }
 

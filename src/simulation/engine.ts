@@ -15,6 +15,7 @@ import type {
   CompletedCardTiming,
   DailyRandomEventLog,
   DayLog,
+  MemberDayCapacityBreakdown,
   GameConfig,
   LogNote,
   Member,
@@ -22,8 +23,10 @@ import type {
   SimulationResult,
   Specialty,
   SynergyRuntime,
+  TaskKind,
 } from './types';
 import { COLUMN_ORDER, specialtyForColumn } from './types';
+import { mergeSpecialtyByTaskKind } from './taskKinds';
 
 function addNote(
   notes: LogNote[],
@@ -54,6 +57,7 @@ export function cardToBoardCard(c: Card): BoardCard {
   const { wa, wd, wt } = splitWork(c.points);
   return {
     ...c,
+    taskKind: c.taskKind ?? 'backend',
     workAnalise: wa,
     workDev: wd,
     workTeste: wt,
@@ -117,11 +121,19 @@ function ownerForStage(
   card: BoardCard,
   members: Member[],
   stage: Specialty,
+  specialtyByTaskKind: Record<TaskKind, Specialty>,
 ): Member {
-  const match = card.assigneeIds
+  const taskKind: TaskKind = card.taskKind ?? 'backend';
+  const expertSpec = specialtyByTaskKind[taskKind] ?? stage;
+  const assignees = card.assigneeIds
     .map((id) => members.find((m) => m.id === id))
-    .find((m) => m && m.specialty === stage);
-  if (match) return match;
+    .filter((m): m is Member => !!m);
+  const forStage = assignees.filter((m) => m.specialty === stage);
+  if (forStage.length > 0) {
+    const expertMatch = forStage.find((m) => m.specialty === expertSpec && expertSpec === stage);
+    if (expertMatch) return expertMatch;
+    return forStage[0]!;
+  }
   const fallback = memberBySpecialty(members, stage);
   if (fallback) return fallback;
   return members[0];
@@ -191,14 +203,15 @@ function applyAdvance(
   p: SimulationParams,
   rng: Rng,
   notes: LogNote[],
+  specialtyByTaskKind: Record<TaskKind, Specialty>,
 ): void {
   const spFrom = specialtyForColumn(from);
   const spTo = specialtyForColumn(to);
   let handoffMult = 1;
   let reworkExtra = 0;
   if (spFrom && spTo) {
-    const outM = ownerForStage(card, members, spFrom);
-    const inM = ownerForStage(card, members, spTo);
+    const outM = ownerForStage(card, members, spFrom, specialtyByTaskKind);
+    const inM = ownerForStage(card, members, spTo, specialtyByTaskKind);
     const s = resolveSynergy(members, synergy.synergyByPair, outM.id, inM.id, {
       synergyPairBidirectional: synergy.synergyPairBidirectional,
       synergyDirected: synergy.synergyDirected,
@@ -251,13 +264,14 @@ function tryFinishStage(
   p: SimulationParams,
   rng: Rng,
   notes: LogNote[],
+  specialtyByTaskKind: Record<TaskKind, Specialty>,
 ): void {
   if (card.remainingInStage > 0) return;
   const nxt = nextColumn(col);
   if (!nxt) return;
-  applyAdvance(board, card, col, nxt, members, synergy, p, rng, notes);
+  applyAdvance(board, card, col, nxt, members, synergy, p, rng, notes, specialtyByTaskKind);
   if (card.remainingInStage === 0 && nxt !== 'deploy') {
-    tryFinishStage(board, card, nxt, members, synergy, p, rng, notes);
+    tryFinishStage(board, card, nxt, members, synergy, p, rng, notes, specialtyByTaskKind);
   }
 }
 
@@ -309,7 +323,7 @@ function synergyCollabMultiplier(
   synergy: SynergyRuntime,
   p: SimulationParams,
 ): number {
-  if (!card.collaborative || card.assigneeIds.length < 2) return 1;
+  if (card.assigneeIds.length < 2) return 1;
   const [a, b] = card.assigneeIds;
   const s = resolveSynergy(members, synergy.synergyByPair, a, b, {
     synergyPairBidirectional: synergy.synergyPairBidirectional,
@@ -320,7 +334,7 @@ function synergyCollabMultiplier(
   return clamp(1 + p.synergyBeta * s + t, p.collabEffMin, p.collabEffMax);
 }
 
-/** Spend raw capacity `rawPool` on column; 1 raw unit applies `collabMult` effective work on Dev collaborative cards. Returns raw capacity consumed. */
+/** Spend raw capacity `rawPool` on column; on Dev, cards with two assignees apply the collaboration multiplier. Returns raw capacity consumed. */
 function spendOnColumn(
   board: BoardState,
   col: ColumnId,
@@ -330,6 +344,7 @@ function spendOnColumn(
   p: SimulationParams,
   rng: Rng,
   notes: LogNote[],
+  specialtyByTaskKind: Record<TaskKind, Specialty>,
 ): number {
   let rawLeft = rawPool;
   const ids = [...board.columns[col]];
@@ -343,7 +358,7 @@ function spendOnColumn(
     const eff = rawUse * mult;
     card.remainingInStage = Math.max(0, card.remainingInStage - eff);
     rawLeft -= rawUse;
-    tryFinishStage(board, card, col, members, synergy, p, rng, notes);
+    tryFinishStage(board, card, col, members, synergy, p, rng, notes, specialtyByTaskKind);
   }
   return rawPool - rawLeft;
 }
@@ -357,6 +372,8 @@ function workDayStep(
   notes: LogNote[],
   diceByMemberId: Record<string, number>,
   effectiveCapacityByMemberId: Record<string, number>,
+  capacityBreakdownByMemberId: Record<string, MemberDayCapacityBreakdown>,
+  specialtyByTaskKind: Record<TaskKind, Specialty>,
   dayCapacityMultByMemberId?: Record<string, number>,
 ): void {
   const wip = wipEffective(params, members);
@@ -375,36 +392,43 @@ function workDayStep(
   for (const m of members) {
     const base = rollBaseDailyDelivery(m, rng);
     diceByMemberId[m.id] = base;
-    let rawCap = base;
     const sc = specialtyCol(m);
+    let afterSpec = base;
     if (sc && hasWork(sc)) {
-      rawCap = Math.min(
+      afterSpec = Math.min(
         EFFECTIVE_DAILY_CAPACITY_MAX,
         Math.round(base * specialistMultiplier(m)),
       );
     }
+    let afterRole = afterSpec;
     const capBonus = globalCapBonusBySpecialty[m.specialty] ?? 0;
     if (capBonus > 0) {
-      rawCap = Math.min(
+      afterRole = Math.min(
         EFFECTIVE_DAILY_CAPACITY_MAX,
-        Math.round(rawCap * (1 + capBonus)),
+        Math.round(afterSpec * (1 + capBonus)),
       );
     }
+    let rawCap = afterRole;
     const dayMult = dayCapacityMultByMemberId?.[m.id];
     if (dayMult !== undefined && dayMult !== 1) {
       rawCap = Math.max(
         0,
-        Math.min(EFFECTIVE_DAILY_CAPACITY_MAX, Math.round(rawCap * dayMult)),
+        Math.min(EFFECTIVE_DAILY_CAPACITY_MAX, Math.round(afterRole * dayMult)),
       );
     }
+    capacityBreakdownByMemberId[m.id] = {
+      afterSpecialist: afterSpec,
+      afterRoleBonus: afterRole,
+      afterDailyEvent: rawCap,
+    };
     effectiveCapacityByMemberId[m.id] = rawCap;
     let left = rawCap;
     if (sc && hasWork(sc)) {
-      left -= spendOnColumn(board, sc, left, members, synergy, params, rng, notes);
+      left -= spendOnColumn(board, sc, left, members, synergy, params, rng, notes, specialtyByTaskKind);
     }
     for (const { col } of WORK_COLS) {
       if (left <= 0) break;
-      left -= spendOnColumn(board, col, left, members, synergy, params, rng, notes);
+      left -= spendOnColumn(board, col, left, members, synergy, params, rng, notes, specialtyByTaskKind);
     }
   }
 }
@@ -413,6 +437,51 @@ function countColumns(board: BoardState): Record<ColumnId, number> {
   const out = {} as Record<ColumnId, number>;
   for (const k of COLUMN_ORDER) out[k] = board.columns[k].length;
   return out;
+}
+
+function columnOfCard(board: BoardState, cardId: string): ColumnId | null {
+  for (const c of COLUMN_ORDER) {
+    if (board.columns[c].includes(cardId)) return c;
+  }
+  return null;
+}
+
+export type AssigneeRuleFailure = {
+  ok: false;
+  errorKey: string;
+  errorParams?: Record<string, string | number>;
+};
+
+export type UpdateCardAssigneesResult = { ok: true } | AssigneeRuleFailure;
+
+/** Valida e devolve IDs normalizados (mesmas regras do setup). */
+export function resolveAssigneesForCard(
+  card: BoardCard,
+  members: Member[],
+  assigneeIds: string[],
+): { ok: true; ids: string[] } | AssigneeRuleFailure {
+  const valid = new Set(members.map((m) => m.id));
+  const filtered = assigneeIds.filter((id) => valid.has(id));
+  if (filtered.length < 1) {
+    return {
+      ok: false,
+      errorKey: 'errors.cardOneAssignee',
+      errorParams: { title: card.title },
+    };
+  }
+  const a = filtered[0]!;
+  const b = filtered[1];
+  if (b !== undefined) {
+    if (a === b) {
+      return {
+        ok: false,
+        errorKey: 'errors.assigneesMustBeDistinct',
+        errorParams: { title: card.title },
+      };
+    }
+    return { ok: true, ids: [a, b] };
+  }
+  return { ok: true, ids: [a] };
 }
 
 function ceremonyFor(dayInSprint: number, days: number): CeremonyKind {
@@ -428,6 +497,11 @@ export type InteractiveRunner = {
   getBoard: () => BoardState;
   getLogs: () => DayLog[];
   getCompleted: () => CompletedCardTiming[];
+  /**
+   * Atualiza responsáveis de um cartão no quadro (exceto em Deploy).
+   * Afeta sinergia em Dev e donos de handoff nas etapas seguintes.
+   */
+  updateCardAssignees: (cardId: string, assigneeIds: string[]) => UpdateCardAssigneesResult;
 };
 
 /** Avança um dia de calendário (rito + trabalho) ou uma retrospectiva; `null` quando terminou todos os sprints. */
@@ -448,6 +522,7 @@ export function createInteractiveRunner(config: GameConfig): InteractiveRunner {
     synergyPairBidirectional: config.synergyPairBidirectional,
     synergyDirected: config.synergyDirected,
   };
+  const specialtyByTaskKind = mergeSpecialtyByTaskKind(config);
 
   function recordDeploys(): void {
     for (const id of board.columns.deploy) {
@@ -471,6 +546,7 @@ export function createInteractiveRunner(config: GameConfig): InteractiveRunner {
       const notes: LogNote[] = [];
       const diceByMemberId: Record<string, number> = {};
       const effectiveCapacityByMemberId: Record<string, number> = {};
+      const capacityBreakdownByMemberId: Record<string, MemberDayCapacityBreakdown> = {};
       let dailyRandomEvents: DailyRandomEventLog[] | undefined;
 
       if (ceremony === 'sprint_planning') {
@@ -491,6 +567,8 @@ export function createInteractiveRunner(config: GameConfig): InteractiveRunner {
           notes,
           diceByMemberId,
           effectiveCapacityByMemberId,
+          capacityBreakdownByMemberId,
+          specialtyByTaskKind,
           rolled.capacityMultByMemberId,
         );
       }
@@ -503,6 +581,9 @@ export function createInteractiveRunner(config: GameConfig): InteractiveRunner {
         ceremony,
         diceByMemberId,
         effectiveCapacityByMemberId,
+        ...(ceremony === 'daily_scrum' || ceremony === 'sprint_review'
+          ? { capacityBreakdownByMemberId }
+          : {}),
         columnCounts: countColumns(board),
         notes,
         ...(dailyRandomEvents && dailyRandomEvents.length > 0 ? { dailyRandomEvents } : {}),
@@ -530,10 +611,25 @@ export function createInteractiveRunner(config: GameConfig): InteractiveRunner {
     return retroLog;
   }
 
+  function updateCardAssignees(cardId: string, assigneeIds: string[]): UpdateCardAssigneesResult {
+    const card = board.cardsById[cardId];
+    if (!card) return { ok: false, errorKey: 'play.assigneeUnknownCard' };
+    const col = columnOfCard(board, cardId);
+    if (col === 'deploy') {
+      return { ok: false, errorKey: 'play.assigneeReadOnlyDeploy', errorParams: { title: card.title } };
+    }
+    if (!col) return { ok: false, errorKey: 'play.assigneeUnknownCard' };
+    const res = resolveAssigneesForCard(card, members, assigneeIds);
+    if (!res.ok) return res;
+    card.assigneeIds = res.ids;
+    return { ok: true };
+  }
+
   return {
     getBoard: () => board,
     getLogs: () => logs,
     getCompleted: () => completed,
+    updateCardAssignees,
     step: stepImpl,
     advanceUntilAfterRetro(): void {
       while (true) {
@@ -543,6 +639,21 @@ export function createInteractiveRunner(config: GameConfig): InteractiveRunner {
       }
     },
   };
+}
+
+/** Membros que não aparecem como assignees em nenhum cartão do quadro (qualquer coluna). */
+export function membersNotAssignedToAnyCard(board: BoardState, members: Member[]): Member[] {
+  const assigned = new Set<string>();
+  for (const col of COLUMN_ORDER) {
+    for (const cid of board.columns[col]) {
+      const c = board.cardsById[cid];
+      if (!c) continue;
+      for (const aid of c.assigneeIds) {
+        if (aid) assigned.add(aid);
+      }
+    }
+  }
+  return members.filter((m) => !assigned.has(m.id));
 }
 
 export function runSimulation(config: GameConfig): SimulationResult {
