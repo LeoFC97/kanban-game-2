@@ -1,0 +1,125 @@
+% ---------------------------------------------------------------------------
+% Corpo do esqueleto: substitua os blocos \textit{[...]} por parágrafos finais.
+% Labels alinhados ao artigo principal (sbpo2026.tex) para facilitar fusão.
+% ---------------------------------------------------------------------------
+
+\section{Introdução}
+\label{sec:introducao}
+
+\subsection{Contexto e problema}
+\textit{[Por que fluxo ágil + fatores humanos importam para PO / ensino / indústria. Referências iniciais: Kanban, Scrum, simulação.]}
+
+\subsection{Objetivo}
+\textit{[Uma frase objetiva + 2--3 subobjetivos mensuráveis ou de modelagem.]}
+
+\subsection{Contribuições}
+\textit{[Lista numerada ou itemize: modelo; implementação; experimentos; reprodutibilidade. Evite ``contribuição original'' vago.]}
+
+\subsection{Organização do artigo}
+\textit{[Parágrafo padrão: Sec.~\ref{sec:relacionados}--\ref{sec:conclusao} mapeiam seções.]}
+
+% ---------------------------------------------------------------------------
+\section{Trabalhos relacionados}
+\label{sec:relacionados}
+
+\subsection{Fluxo, Kanban e métricas de software}
+\textit{[Poppendieck, Anderson, métricas de fluxo, CFD se aplicável.]}
+
+\subsection{Simulação e jogos sérios em engenharia de software}
+\textit{[Simuladores educacionais; DES; ABM se couber; lacuna vs.\ proposta.]}
+
+\subsection{Síntese e posicionamento}
+\textit{[Tabela opcional ``trabalho | foco | limitação''; onde este artigo se insere.]}
+
+% ---------------------------------------------------------------------------
+\section{Descrição do sistema e modelo operacional}
+\label{sec:modelo}
+
+\subsection{Visão geral e entidades}
+\textit{[Membros, cartões, colunas, ordenação do fluxo. Figura opcional do quadro.]}
+
+\subsection{Parâmetros globais}
+\textit{[Sprint, WIP, PRNG, coeficientes $\beta$, $\gamma$, etc.; referência à tabela de parâmetros quando existir.]}
+
+\subsection{Sinergia e traços}
+\textit{[Notação $s_{ij}$; catálogo de traços; remissão à Tabela~\ref{tab:tracos} no texto final.]}
+
+\subsection{Calendário e incremento de tempo}
+\textit{[Dia global, sprint, rito; o que muda a cada passo.]}
+
+\subsection{Planejamento e políticas de puxada}
+\textit{[Planning $\rightarrow$ análise; pull do backlog e limites WIP / $P_{\max}$.]}
+
+\subsection{Capacidade diária e trabalho nas colunas}
+\textit{[Sorteio, especialista, papéis; gasto de capacidade por coluna.]}
+
+\subsection{Colaboração em \texttt{dev} e handoffs}
+\textit{[Multiplicadores, clamp, retrabalho; equações principais sem implementação excessiva.]}
+
+\subsection{Pseudo-código ou fluxograma (opcional)}
+\textit{[Remissão à Figura~\ref{fig:pseudo} quando incluída.]}
+
+% ---------------------------------------------------------------------------
+\section{Ritos Scrum no calendário}
+\label{sec:ritos}
+
+\subsection{Mapeamento rito $\leftrightarrow$ dia}
+\textit{[Tabela~\ref{tab:ritos}: planning, daily, review, retro.]}
+
+\subsection{Efeitos no motor}
+\textit{[O que cada rito altera no estado; eventos aleatórios se houver.]}
+
+% ---------------------------------------------------------------------------
+\section{Arquitetura do protótipo e reprodutibilidade}
+\label{sec:arquitetura}
+
+\subsection{Módulos e responsabilidades}
+\textit{[Motor, UI, exportação de logs; linguagem e repositório.]}
+
+\subsection{Rastreabilidade texto--código}
+\textit{[Como nomes de tipos/funções aparecem no PDF; seed e JSON de resultado.]}
+
+\subsection{Figura de fluxo (opcional)}
+\textit{[Figura~\ref{fig:fluxoQuadro}.]}
+
+% ---------------------------------------------------------------------------
+\section{Desenho experimental}
+\label{sec:experimentos}
+
+\subsection{Objetivo e hipóteses}
+\textit{[H1, H2, H3 operacionais; o que é mantido fixo vs.\ variado.]}
+
+\subsection{Equipe, backlog e cenários A/B/C/D}
+\textit{[Descrição sucinta; remissão à Tabela~\ref{tab:param}.]}
+
+\subsection{Métricas e protocolo de replicação}
+\textit{[CFD, cycle time, throughput; comando para regenerar figuras.]}
+
+% ---------------------------------------------------------------------------
+\section{Resultados}
+\label{sec:resultados}
+
+\subsection{Séries temporais e CFD}
+\textit{[Figura~\ref{fig:cfdA} ou variantes por cenário.]}
+
+\subsection{Tempo de ciclo e throughput}
+\textit{[Figura~\ref{fig:bar}, Figura~\ref{fig:tp}; Tabela~\ref{tab:resumoCenarios}.]}
+
+\subsection{Leitura qualitativa}
+\textit{[2--4 frases ligando números às hipóteses; sem extrapolar além do desenho.]}
+
+% ---------------------------------------------------------------------------
+\section{Discussão}
+\label{sec:discussao}
+
+\subsection{Limitações do modelo e dos experimentos}
+\textit{[Simplificações conscientes; ameaças à validade externa.]}
+
+\subsection{Trabalhos futuros}
+\textit{[Calibração com dados reais; mais traços; políticas alternativas.]}
+
+% ---------------------------------------------------------------------------
+\section{Conclusão}
+\label{sec:conclusao}
+
+\textit{[Repetir problema + método + achado principal + contribuição; 1 parágrafo + opcional frase de encerramento.]}

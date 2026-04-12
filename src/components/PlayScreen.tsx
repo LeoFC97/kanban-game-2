@@ -1,17 +1,15 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { DayLog, GameConfig } from '../simulation/types';
+import type { ColumnId, DayLog, GameConfig } from '../simulation/types';
 import { createInteractiveRunner, membersNotAssignedToAnyCard } from '../simulation/engine';
+import { buildWorkFillPulse, snapshotCardWork, type WorkFillPulse } from '../simulation/cardProgress';
 import { buildCfdSeries } from '../simulation/metrics';
 import { buildFinancialSummary } from '../simulation/financial';
 import { formatLogNote } from '../i18n/formatLogNote';
 import { KanbanBoard } from './KanbanBoard';
-import { CfdChart } from './CfdChart';
-import { CycleTimeSummary } from './CycleTimeSummary';
 import { DaySummaryModal } from './DaySummaryModal';
 import { DailyEventsCatalog } from './DailyEventsCatalog';
-import { FinancialReport } from './FinancialReport';
-import { FinancialCharts } from './FinancialCharts';
+import { PlayChartsModal } from './PlayChartsModal';
 
 type Props = {
   config: GameConfig;
@@ -24,7 +22,16 @@ export function PlayScreen({ config, onBackToSetup }: Props) {
   const [, setTick] = useState(0);
   const [dayModalLog, setDayModalLog] = useState<DayLog | null>(null);
   const [assigneeError, setAssigneeError] = useState<string | null>(null);
+  const [moveError, setMoveError] = useState<string | null>(null);
+  const [workFillPulse, setWorkFillPulse] = useState<WorkFillPulse | null>(null);
+  const [chartsOpen, setChartsOpen] = useState(false);
   const refresh = useCallback(() => setTick((n) => n + 1), []);
+
+  useEffect(() => {
+    if (!workFillPulse) return;
+    const t = window.setTimeout(() => setWorkFillPulse(null), 920);
+    return () => clearTimeout(t);
+  }, [workFillPulse]);
 
   const logs = runner.getLogs();
   const board = runner.getBoard();
@@ -57,6 +64,25 @@ export function PlayScreen({ config, onBackToSetup }: Props) {
     [runner, refresh, t],
   );
 
+  const handleManualMoveCard = useCallback(
+    (cardId: string, _fromColumn: ColumnId, toColumn: ColumnId) => {
+      void _fromColumn;
+      const r = runner.manualMoveCard(cardId, toColumn);
+      if (!r.ok) {
+        const ep = r.errorParams as Record<string, string | number> | undefined;
+        if (ep && typeof ep.col === 'string') {
+          setMoveError(t(r.errorKey, { ...ep, col: t(`columns.${ep.col as ColumnId}`) }));
+        } else {
+          setMoveError(t(r.errorKey, ep));
+        }
+        return;
+      }
+      setMoveError(null);
+      refresh();
+    },
+    [runner, refresh, t],
+  );
+
   const guardAllocationOrAlert = (): boolean => {
     const missing = membersNotAssignedToAnyCard(runner.getBoard(), config.members);
     if (config.members.length === 0 || missing.length === 0) return true;
@@ -70,14 +96,23 @@ export function PlayScreen({ config, onBackToSetup }: Props) {
 
   const advanceOne = () => {
     setAssigneeError(null);
+    setMoveError(null);
     if (!guardAllocationOrAlert()) return;
+    const before = snapshotCardWork(runner.getBoard());
     const log = runner.step();
     refresh();
+    if (log && (log.ceremony === 'daily_scrum' || log.ceremony === 'sprint_review')) {
+      setWorkFillPulse(buildWorkFillPulse(before, runner.getBoard()));
+    } else {
+      setWorkFillPulse(null);
+    }
     if (log) setDayModalLog(log);
   };
 
   const advanceSprint = () => {
     setAssigneeError(null);
+    setMoveError(null);
+    setWorkFillPulse(null);
     if (!guardAllocationOrAlert()) return;
     runner.advanceUntilAfterRetro();
     setDayModalLog(null);
@@ -86,6 +121,8 @@ export function PlayScreen({ config, onBackToSetup }: Props) {
 
   const runAll = () => {
     setAssigneeError(null);
+    setMoveError(null);
+    setWorkFillPulse(null);
     if (!guardAllocationOrAlert()) return;
     const r = createInteractiveRunner(config);
     while (r.step()) {
@@ -98,6 +135,8 @@ export function PlayScreen({ config, onBackToSetup }: Props) {
 
   const resetMatch = () => {
     setAssigneeError(null);
+    setMoveError(null);
+    setWorkFillPulse(null);
     setRunner(createInteractiveRunner(config));
     setDayModalLog(null);
     refresh();
@@ -112,6 +151,16 @@ export function PlayScreen({ config, onBackToSetup }: Props) {
           onClose={() => setDayModalLog(null)}
         />
       )}
+      {chartsOpen && (
+        <PlayChartsModal
+          onClose={() => setChartsOpen(false)}
+          cfdData={cfdData}
+          completed={completed}
+          cardsById={board.cardsById}
+          financialSummary={financialSummary}
+          lastGlobalDay={lastGlobalDay}
+        />
+      )}
       <header className="play-header">
         <div>
           <h1>{t('play.title')}</h1>
@@ -124,6 +173,9 @@ export function PlayScreen({ config, onBackToSetup }: Props) {
           </p>
         </div>
         <div className="play-header-actions">
+          <button type="button" className="btn secondary" onClick={() => setChartsOpen(true)}>
+            {t('play.chartsButton')}
+          </button>
           <button
             type="button"
             className="btn secondary"
@@ -227,9 +279,10 @@ export function PlayScreen({ config, onBackToSetup }: Props) {
 
       <DailyEventsCatalog />
 
-      <div className="play-grid">
+      <div className="play-grid play-grid-main-only">
         <div className="play-main">
           <p className="muted kanban-assignees-hint">{t('play.kanbanAssigneesHint')}</p>
+          <p className="muted small kanban-drag-card-hint">{t('play.kanbanDragCardsHint')}</p>
           {blockAdvanceByAllocation && (
             <div className="assignee-error-banner" role="alert">
               {t('play.allocationBlocked', {
@@ -246,10 +299,21 @@ export function PlayScreen({ config, onBackToSetup }: Props) {
               {assigneeError}
             </div>
           )}
+          {moveError && (
+            <div className="assignee-error-banner" role="alert">
+              {moveError}
+              <button type="button" className="btn secondary small" onClick={() => setMoveError(null)}>
+                {t('play.dismissMoveError')}
+              </button>
+            </div>
+          )}
           <KanbanBoard
             board={board}
             members={config.members}
+            params={config.params}
             onUpdateAssignees={handleUpdateAssignees}
+            onManualMoveCard={handleManualMoveCard}
+            workFillPulse={workFillPulse}
           />
           {lastLog && lastLog.notes.length > 0 && (
             <div className="notes-box">
@@ -262,15 +326,6 @@ export function PlayScreen({ config, onBackToSetup }: Props) {
             </div>
           )}
         </div>
-        <aside className="play-side">
-          <CfdChart data={cfdData} />
-          <CycleTimeSummary completed={completed} cardsById={board.cardsById} />
-        </aside>
-      </div>
-
-      <div className="play-financial">
-        <FinancialReport summary={financialSummary} />
-        <FinancialCharts summary={financialSummary} lastGlobalDay={lastGlobalDay} />
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { DayLog, Member } from '../simulation/types';
+import { COLUMN_ORDER, type DayLog, type Member } from '../simulation/types';
 import { formatLogNote } from '../i18n/formatLogNote';
 
 type Props = {
@@ -152,16 +152,7 @@ export function DaySummaryModal({ log, members, onClose }: Props) {
           <section className="day-modal-section">
             <h3>{t('play.dayModal.boardTitle')}</h3>
             <ul className="day-modal-columns">
-              {(
-                [
-                  'backlog',
-                  'ready',
-                  'analise',
-                  'dev',
-                  'teste',
-                  'deploy',
-                ] as const
-              ).map((col) => (
+              {COLUMN_ORDER.map((col) => (
                 <li key={col}>
                   <span className="muted">{t(`columns.${col}`)}</span>
                   <strong>{log.columnCounts[col]}</strong>

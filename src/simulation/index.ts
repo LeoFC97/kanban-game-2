@@ -1,4 +1,5 @@
 export * from './types';
+export { STORY_WORK_MULTIPLIER } from './storyScale';
 export * from './rng';
 export * from './synergy';
 export * from './traitsCatalog';
@@ -10,9 +11,11 @@ export {
   createInteractiveRunner,
   initialBoard,
   cardToBoardCard,
+  splitWork,
   diceMaxForMember,
   ensureSynergyKeys,
   membersNotAssignedToAnyCard,
+  canManuallyAdvanceCardFromColumn,
   resolveAssigneesForCard,
   type InteractiveRunner,
   type UpdateCardAssigneesResult,

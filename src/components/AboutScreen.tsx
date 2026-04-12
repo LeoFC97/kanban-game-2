@@ -34,6 +34,13 @@ export function AboutScreen({ onClose }: Props) {
       </section>
 
       <section className="about-section">
+        <h2>{t('about.sections.teamDaily.title')}</h2>
+        <p className="muted">{t('about.sections.teamDaily.body')}</p>
+        <MathBlock>{t('about.sections.teamDaily.formula1')}</MathBlock>
+        <MathBlock>{t('about.sections.teamDaily.formula2')}</MathBlock>
+      </section>
+
+      <section className="about-section">
         <h2>{t('about.sections.devSpend.title')}</h2>
         <p className="muted">{t('about.sections.devSpend.body')}</p>
         <MathBlock>{t('about.sections.devSpend.formula1')}</MathBlock>

@@ -10,11 +10,10 @@
   legend style={font=\scriptsize,at={(0.5,1.02)},anchor=south},
 ]
 \addplot[thick,const plot,color=black!70] table[col sep=comma,x=day,y=backlog]{data/cfd_A_baseline.csv};
-\addplot[thick,const plot,color=blue!70] table[col sep=comma,x=day,y=ready]{data/cfd_A_baseline.csv};
 \addplot[thick,const plot,color=violet!80] table[col sep=comma,x=day,y=analise]{data/cfd_A_baseline.csv};
 \addplot[thick,const plot,color=teal!80] table[col sep=comma,x=day,y=dev]{data/cfd_A_baseline.csv};
 \addplot[thick,const plot,color=orange!90] table[col sep=comma,x=day,y=teste]{data/cfd_A_baseline.csv};
 \addplot[thick,const plot,color=red!80] table[col sep=comma,x=day,y=deploy]{data/cfd_A_baseline.csv};
-\legend{Backlog,Pronto,Análise,Dev,Teste,Deploy}
+\legend{Backlog,Análise,Dev,Teste,Deploy}
 \end{axis}
 \end{tikzpicture}

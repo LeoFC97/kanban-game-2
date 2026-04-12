@@ -4,11 +4,15 @@ import type { Card, GameConfig, Member, SimulationParams, Specialty, TaskKind } 
 import { mergeSpecialtyByTaskKind, TASK_KINDS } from '../simulation/taskKinds';
 import { JOB_ROLES } from '../simulation/rolesCatalog';
 import { TRAITS } from '../simulation/traitsCatalog';
-import { diceMaxForMember, ensureSynergyKeys } from '../simulation/engine';
+import { diceMaxForMember, ensureSynergyKeys, splitWork } from '../simulation/engine';
+import { STORY_WORK_MULTIPLIER } from '../simulation/storyScale';
 import { SynergyMatrix } from './SynergyMatrix';
 import { MemberSynergyPanel } from './MemberSynergyPanel';
 import { directedKey, pairKey } from '../simulation/synergy';
-
+import {
+  buildClassicBacklogCard,
+  pickRandomClassicTemplate,
+} from '../setup/classicCsTaskPool';
 type Props = {
   value: GameConfig;
   onChange: (next: GameConfig) => void;
@@ -45,6 +49,17 @@ function stripPairBidirectionalForMember(
 
 const SPECIALTIES: Specialty[] = ['Analista', 'Desenvolvedor', 'Testador'];
 
+function stageUnitsForForm(c: Card): { wa: number; wd: number; wt: number } {
+  if (c.workAnalise !== undefined && c.workDev !== undefined && c.workTeste !== undefined) {
+    return {
+      wa: Math.max(0, Math.round(c.workAnalise)),
+      wd: Math.max(0, Math.round(c.workDev)),
+      wt: Math.max(0, Math.round(c.workTeste)),
+    };
+  }
+  return splitWork(Math.max(1, c.points));
+}
+
 export function SetupScreen({ value, onChange, onStart }: Props) {
   const { t } = useTranslation();
   const synergy = useMemo(
@@ -52,14 +67,11 @@ export function SetupScreen({ value, onChange, onStart }: Props) {
     [value.members, value.synergyByPair],
   );
 
-  const memberIds = value.members.map((m) => m.id);
   const errors: string[] = [];
   if (value.members.length === 0) errors.push(t('errors.atLeastOneMember'));
   for (const c of value.backlogCards) {
-    if (c.assigneeIds.length < 1) {
-      errors.push(t('errors.cardOneAssignee', { title: c.title }));
-    }
-    if (c.assigneeIds.length >= 2 && c.assigneeIds[0] === c.assigneeIds[1]) {
+    const seen = new Set(c.assigneeIds);
+    if (seen.size !== c.assigneeIds.length) {
       errors.push(t('errors.assigneesMustBeDistinct', { title: c.title }));
     }
   }
@@ -175,6 +187,18 @@ export function SetupScreen({ value, onChange, onStart }: Props) {
     onChange({ ...value, backlogCards });
   }
 
+  function patchCardStageWork(i: number, field: 'workAnalise' | 'workDev' | 'workTeste', raw: number) {
+    const c = value.backlogCards[i]!;
+    const cur = stageUnitsForForm(c);
+    const v = Math.max(0, Math.round(Number(raw) || 0));
+    let wa = field === 'workAnalise' ? v : cur.wa;
+    const wd = field === 'workDev' ? v : cur.wd;
+    const wt = field === 'workTeste' ? v : cur.wt;
+    if (wa + wd + wt < 1) wa = 1;
+    const points = wa + wd + wt;
+    patchCard(i, { workAnalise: wa, workDev: wd, workTeste: wt, points });
+  }
+
   function removeCard(i: number) {
     onChange({ ...value, backlogCards: value.backlogCards.filter((_, j) => j !== i) });
   }
@@ -190,16 +214,32 @@ export function SetupScreen({ value, onChange, onStart }: Props) {
     const id = `c-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     const roughDaysPerSprint = value.params.daysPerSprint + 2;
     const roughLastDay = Math.max(roughDaysPerSprint, value.params.numSprints * roughDaysPerSprint);
+    const { wa, wd, wt } = splitWork(5 * STORY_WORK_MULTIPLIER);
     const card: Card = {
       id,
       title: t('setup.defaults.newStoryTitle'),
-      points: 5,
+      points: wa + wd + wt,
+      workAnalise: wa,
+      workDev: wd,
+      workTeste: wt,
       taskKind: 'backend',
-      assigneeIds:
-        memberIds.length >= 2 ? [memberIds[0]!, memberIds[1]!] : memberIds[0] ? [memberIds[0]] : [],
+      assigneeIds: [],
       businessValue: 8000,
       dueGlobalDay: Math.max(5, roughLastDay - 8),
     };
+    onChange({ ...value, backlogCards: [...value.backlogCards, card] });
+  }
+
+  function addClassicRandomTask() {
+    const template = pickRandomClassicTemplate();
+    const id = `c-cc-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const title = t(`setup.classicTasks.${template.key}`);
+    const card = buildClassicBacklogCard({
+      id,
+      title,
+      params: value.params,
+      template,
+    });
     onChange({ ...value, backlogCards: [...value.backlogCards, card] });
   }
 
@@ -386,25 +426,44 @@ export function SetupScreen({ value, onChange, onStart }: Props) {
         </table>
       </section>
 
-      <section className="panel">
-        <h2>{t('setup.backlogTitle')}</h2>
-        <button type="button" className="btn secondary" onClick={addCard}>
-          {t('setup.addCard')}
-        </button>
+      <section className="panel setup-backlog-panel">
+        <div className="setup-backlog-head">
+          <h2>{t('setup.backlogTitle')}</h2>
+          <div className="setup-backlog-actions">
+            <button type="button" className="btn secondary" onClick={addCard}>
+              {t('setup.addCard')}
+            </button>
+            <button
+              type="button"
+              className="btn secondary"
+              title={t('setup.classicTasksHint')}
+              onClick={addClassicRandomTask}
+            >
+              {t('setup.classicTaskButton')}
+            </button>
+          </div>
+        </div>
+        <p className="muted small setup-backlog-note">{t('setup.assigneeDragIntro')}</p>
+        <p className="muted small backlog-stage-hint">{t('setup.tableStageWorkHint')}</p>
         <table className="data-table backlog-table">
           <thead>
             <tr>
               <th>{t('setup.tableTitle')}</th>
               <th>{t('setup.tableTaskKind')}</th>
-              <th>{t('setup.tablePoints')}</th>
+              <th className="narrow-num">{t('setup.tableWorkAnalise')}</th>
+              <th className="narrow-num">{t('setup.tableWorkDev')}</th>
+              <th className="narrow-num">{t('setup.tableWorkTeste')}</th>
+              <th className="narrow-num">{t('setup.tablePointsSum')}</th>
               <th>{t('setup.tableBusinessValue')}</th>
               <th>{t('setup.tableDueGlobalDay')}</th>
-              <th>{t('setup.tableAssignees')}</th>
               <th />
             </tr>
           </thead>
           <tbody>
-            {value.backlogCards.map((c, i) => (
+            {value.backlogCards.map((c, i) => {
+              const st = stageUnitsForForm(c);
+              const sumPts = st.wa + st.wd + st.wt;
+              return (
               <tr key={c.id}>
                 <td>
                   <input
@@ -426,14 +485,35 @@ export function SetupScreen({ value, onChange, onStart }: Props) {
                     ))}
                   </select>
                 </td>
-                <td>
+                <td className="narrow-num">
                   <input
                     type="number"
-                    min={1}
+                    min={0}
                     className="input narrow"
-                    value={c.points}
-                    onChange={(e) => patchCard(i, { points: Math.max(1, Number(e.target.value) || 1) })}
+                    value={st.wa}
+                    onChange={(e) => patchCardStageWork(i, 'workAnalise', Number(e.target.value) || 0)}
                   />
+                </td>
+                <td className="narrow-num">
+                  <input
+                    type="number"
+                    min={0}
+                    className="input narrow"
+                    value={st.wd}
+                    onChange={(e) => patchCardStageWork(i, 'workDev', Number(e.target.value) || 0)}
+                  />
+                </td>
+                <td className="narrow-num">
+                  <input
+                    type="number"
+                    min={0}
+                    className="input narrow"
+                    value={st.wt}
+                    onChange={(e) => patchCardStageWork(i, 'workTeste', Number(e.target.value) || 0)}
+                  />
+                </td>
+                <td className="narrow-num backlog-sum-pts" title={t('setup.tablePointsSumHint')}>
+                  {sumPts}
                 </td>
                 <td>
                   <input
@@ -466,49 +546,13 @@ export function SetupScreen({ value, onChange, onStart }: Props) {
                   />
                 </td>
                 <td>
-                  <div className="assignee-row">
-                    <select
-                      className="input"
-                      value={c.assigneeIds[0] ?? ''}
-                      onChange={(e) => {
-                        const a = e.target.value;
-                        const b = c.assigneeIds[1];
-                        if (b && b !== a) patchCard(i, { assigneeIds: [a, b] });
-                        else patchCard(i, { assigneeIds: a ? [a] : [] });
-                      }}
-                    >
-                      {value.members.map((mem) => (
-                        <option key={mem.id} value={mem.id}>
-                          {mem.name}
-                        </option>
-                      ))}
-                    </select>
-                    <select
-                      className="input"
-                      value={c.assigneeIds[1] ?? ''}
-                      onChange={(e) => {
-                        const b = e.target.value;
-                        const a = c.assigneeIds[0] ?? memberIds[0] ?? '';
-                        if (!b) patchCard(i, { assigneeIds: a ? [a] : [] });
-                        else patchCard(i, { assigneeIds: a ? [a, b] : [b] });
-                      }}
-                    >
-                      <option value="">{t('setup.assigneeOptional')}</option>
-                      {value.members.map((mem) => (
-                        <option key={mem.id} value={mem.id}>
-                          {mem.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </td>
-                <td>
                   <button type="button" className="btn danger small" onClick={() => removeCard(i)}>
                     ✕
                   </button>
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </section>
@@ -562,12 +606,17 @@ export function SetupScreen({ value, onChange, onStart }: Props) {
             {t('setup.params.planningPullMax')}
             <input
               type="number"
-              min={1}
+              min={0}
               max={20}
               className="input"
               value={value.params.planningPullMax}
-              onChange={(e) => patchParams({ planningPullMax: Math.max(1, Number(e.target.value) || 5) })}
+              onChange={(e) =>
+                patchParams({
+                  planningPullMax: Math.min(20, Math.max(0, Math.round(Number(e.target.value) || 0))),
+                })
+              }
             />
+            <span className="muted small param-hint">{t('setup.params.planningPullMaxHint')}</span>
           </label>
           <label>
             {t('setup.params.synergyBeta')}

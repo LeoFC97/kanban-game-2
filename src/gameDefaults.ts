@@ -1,6 +1,7 @@
 import type { AppLanguage } from './i18n/storage';
 import type { Card, GameConfig, Member, SimulationParams } from './simulation/types';
-import { ensureSynergyKeys } from './simulation/engine';
+import { ensureSynergyKeys, splitWork } from './simulation/engine';
+import { STORY_WORK_MULTIPLIER } from './simulation/storyScale';
 import { pairKey } from './simulation/synergy';
 import ptBR from './locales/pt-BR.json';
 import en from './locales/en.json';
@@ -25,7 +26,8 @@ export function defaultParams(): SimulationParams {
     numSprints: 3,
     seed: 42,
     wipPerColumn: 3,
-    planningPullMax: 5,
+    /** 0 = não puxar cartões do backlog no planning; usa-se arrastar manualmente no quadro. */
+    planningPullMax: 0,
     synergyBeta: 0.35,
     synergyGamma: 0.25,
     collabEffMin: 0.55,
@@ -68,46 +70,59 @@ export function defaultMembers(lang: AppLanguage = 'pt-BR'): Member[] {
   ];
 }
 
-export function defaultBacklog(memberIds: string[], lang: AppLanguage = 'pt-BR'): Card[] {
+function cardWithStages(
+  base: Omit<Card, 'workAnalise' | 'workDev' | 'workTeste' | 'points'> & { points: number },
+): Card {
+  const { wa, wd, wt } = splitWork(base.points);
+  return {
+    ...base,
+    workAnalise: wa,
+    workDev: wd,
+    workTeste: wt,
+    points: wa + wd + wt,
+  };
+}
+
+export function defaultBacklog(lang: AppLanguage = 'pt-BR'): Card[] {
   const sc = scenarioByLang[lang] ?? scenarioByLang['pt-BR'];
-  const [a, b, c] = memberIds;
+  const k = STORY_WORK_MULTIPLIER;
   return [
-    {
+    cardWithStages({
       id: 'c1',
       title: sc.cards.api,
-      points: 8,
+      points: 8 * k,
       taskKind: 'backend',
-      assigneeIds: [a],
+      assigneeIds: [],
       businessValue: 14_000,
-      dueGlobalDay: 14,
-    },
-    {
+      dueGlobalDay: 72,
+    }),
+    cardWithStages({
       id: 'c2',
       title: sc.cards.checkout,
-      points: 10,
+      points: 10 * k,
       taskKind: 'frontend',
-      assigneeIds: [b, c],
+      assigneeIds: [],
       businessValue: 22_000,
-      dueGlobalDay: 18,
-    },
-    {
+      dueGlobalDay: 88,
+    }),
+    cardWithStages({
       id: 'c3',
       title: sc.cards.report,
-      points: 5,
+      points: 5 * k,
       taskKind: 'data',
-      assigneeIds: [c],
+      assigneeIds: [],
       businessValue: 9_000,
-      dueGlobalDay: 22,
-    },
-    {
+      dueGlobalDay: 96,
+    }),
+    cardWithStages({
       id: 'c4',
       title: sc.cards.dashboard,
-      points: 12,
+      points: 12 * k,
       taskKind: 'design',
-      assigneeIds: [b],
+      assigneeIds: [],
       businessValue: 18_000,
-      dueGlobalDay: 28,
-    },
+      dueGlobalDay: 110,
+    }),
   ];
 }
 
@@ -120,7 +135,7 @@ export function defaultGameConfig(lang: AppLanguage = 'pt-BR'): GameConfig {
       [pairKey('m1', 'm3')]: -0.2,
       [pairKey('m2', 'm3')]: 0.1,
     }),
-    backlogCards: defaultBacklog(members.map((m) => m.id), lang),
+    backlogCards: defaultBacklog(lang),
     params: defaultParams(),
   };
 }

@@ -45,11 +45,11 @@ function esc(s: string): string {
 }
 
 function writeCfdCsv(series: ReturnType<typeof buildCfdSeries>, outPath: string): void {
-  const header = 'day,backlog,ready,analise,dev,teste,deploy\n';
+  const header = 'day,backlog,analise,dev,teste,deploy\n';
   const body = series
     .map(
       (r) =>
-        `${r.globalDay},${r.backlog},${r.ready},${r.analise},${r.dev},${r.teste},${r.deploy}`,
+        `${r.globalDay},${r.backlog},${r.analise},${r.dev},${r.teste},${r.deploy}`,
     )
     .join('\n');
   writeFileSync(outPath, header + body + '\n', 'utf8');
@@ -68,12 +68,11 @@ function writeCfdTikzFigure(csvRelative: string, outPath: string): void {
   legend style={font=\\scriptsize,at={(0.5,1.02)},anchor=south},
 ]
 \\addplot[thick,const plot,color=black!70] table[col sep=comma,x=day,y=backlog]{${csvRelative}};
-\\addplot[thick,const plot,color=blue!70] table[col sep=comma,x=day,y=ready]{${csvRelative}};
 \\addplot[thick,const plot,color=violet!80] table[col sep=comma,x=day,y=analise]{${csvRelative}};
 \\addplot[thick,const plot,color=teal!80] table[col sep=comma,x=day,y=dev]{${csvRelative}};
 \\addplot[thick,const plot,color=orange!90] table[col sep=comma,x=day,y=teste]{${csvRelative}};
 \\addplot[thick,const plot,color=red!80] table[col sep=comma,x=day,y=deploy]{${csvRelative}};
-\\legend{Backlog,Pronto,Análise,Dev,Teste,Deploy}
+\\legend{Backlog,Análise,Dev,Teste,Deploy}
 \\end{axis}
 \\end{tikzpicture}
 `;
@@ -117,15 +116,8 @@ function writeCfdSvg(
   const series = buildCfdSeries(logs);
   const days = series.map((r) => r.globalDay);
   const maxDay = days[days.length - 1] ?? 1;
-  const keys = [
-    'backlog',
-    'ready',
-    'analise',
-    'dev',
-    'teste',
-    'deploy',
-  ] as const;
-  const colors = ['#444', '#1976d2', '#7b1fa2', '#388e3c', '#f57c00', '#c62828'];
+  const keys = ['backlog', 'analise', 'dev', 'teste', 'deploy'] as const;
+  const colors = ['#444', '#7b1fa2', '#388e3c', '#f57c00', '#c62828'];
   const W = 720;
   const H = 260;
   const m = { l: 48, r: 16, t: 28, b: 40 };
@@ -147,7 +139,6 @@ function writeCfdSvg(
   });
   const legendPt: Record<string, string> = {
     backlog: 'Backlog',
-    ready: 'Pronto',
     analise: 'Análise',
     dev: 'Dev',
     teste: 'Teste',

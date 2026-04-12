@@ -3,44 +3,40 @@
     "id": "A_baseline",
     "title": "A — Linha de base",
     "completed": 7,
-    "meanCycleTime": 2.7142857142857144,
-    "medianCycleTime": 3,
+    "meanCycleTime": 1.8571428571428572,
+    "medianCycleTime": 2,
     "throughputBySprint": {
-      "1": 6,
-      "2": 1
+      "1": 7
     }
   },
   {
     "id": "B_collab_synergy",
     "title": "B — Sinergia positiva entre os desenvolvedores",
     "completed": 7,
-    "meanCycleTime": 2.5714285714285716,
+    "meanCycleTime": 1.7142857142857142,
     "medianCycleTime": 2,
     "throughputBySprint": {
-      "1": 6,
-      "2": 1
+      "1": 7
     }
   },
   {
     "id": "C_handoff_synergy",
     "title": "C — Sinergia negativa no handoff entre analista e desenvolvedor principal",
     "completed": 7,
-    "meanCycleTime": 3,
-    "medianCycleTime": 3,
+    "meanCycleTime": 2.4285714285714284,
+    "medianCycleTime": 2,
     "throughputBySprint": {
-      "1": 6,
-      "2": 1
+      "1": 7
     }
   },
   {
     "id": "D_trait_hiperfoco",
     "title": "D — Defeito Hiperfoco no desenvolvedor principal",
     "completed": 7,
-    "meanCycleTime": 2.7142857142857144,
-    "medianCycleTime": 3,
+    "meanCycleTime": 1.8571428571428572,
+    "medianCycleTime": 2,
     "throughputBySprint": {
-      "1": 6,
-      "2": 1
+      "1": 7
     }
   }
 ]

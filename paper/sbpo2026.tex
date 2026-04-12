@@ -1,28 +1,8 @@
 % Rascunho alinhado às dimensões do SBPO 2026 (ST). Substitua/mescle com o template oficial do evento quando disponível.
 \documentclass[11pt,a4paper]{article}
-
-\usepackage[a4paper,top=3.3cm,bottom=2.5cm,left=2.9cm,right=2.9cm]{geometry}
-\usepackage{mathptmx}
-\usepackage[T1]{fontenc}
-\usepackage[utf8]{inputenc}
-\usepackage[brazil]{babel}
-\usepackage{microtype}
-\usepackage{amsmath,amssymb}
-\usepackage{booktabs}
-\usepackage{graphicx}
-\usepackage{pgfplots}
-\pgfplotsset{compat=1.18}
-\usepackage{tikz}
-\usetikzlibrary{arrows.meta,positioning,calc}
-\usepackage{hyperref}
-\usepackage{enumitem}
-\setlist{nosep}
-
-\linespread{1}
-\renewcommand{\normalsize}{\fontsize{11}{13.2}\selectfont}
-\normalsize
-
-\hypersetup{colorlinks=true,linkcolor=black,citecolor=black,urlcolor=blue}
+\input{preamble_sbpo}
+% Artigo final: aviso no .log se o PDF ultrapassar \sbpoMaxPages (definido no preâmbulo).
+\sbpoLimitPagestrue
 
 \title{Simulação de fluxo Kanban com calendário Scrum: sinergia interpessoal, traços individuais e experimentos reprodutíveis}
 \date{}

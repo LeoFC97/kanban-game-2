@@ -11,7 +11,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "paper:figures": "tsx --tsconfig tsconfig.paper.json scripts/generate-paper-figures.ts"
+    "paper:figures": "tsx --tsconfig tsconfig.paper.json scripts/generate-paper-figures.ts",
+    "paper:pdf": "make -C paper pdf"
   },
   "dependencies": {
     "i18next": "^26.0.4",

@@ -1,0 +1,40 @@
+% Pacotes e ajustes comuns (SBPO 2026 ST — margens, Times 11, PT-BR).
+\usepackage[a4paper,top=3.3cm,bottom=2.5cm,left=2.9cm,right=2.9cm]{geometry}
+\usepackage{mathptmx}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[brazil]{babel}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\setlist{nosep}
+
+\linespread{1}
+\renewcommand{\normalsize}{\fontsize{11}{13.2}\selectfont}
+\normalsize
+
+\hypersetup{colorlinks=true,linkcolor=black,citecolor=black,urlcolor=blue}
+
+% Limite SBPO 2026 (ST): 12 páginas no PDF final (texto + figuras + referências).
+\newcount\sbpoMaxPages
+\sbpoMaxPages=12
+\newif\ifsbpoLimitPages
+\sbpoLimitPagesfalse
+\AtEndDocument{%
+  \ifsbpoLimitPages
+    \ifnum\value{page}>\sbpoMaxPages\relax
+      \PackageWarning{sbpo2026}{%
+        Limite de paginas SBPO ST: este PDF tem \arabic{page} pagina(s) (maximo \the\sbpoMaxPages).%
+        \MessageBreak Reduza texto, equacoes, figuras/tabelas ou bibliografia; recompile e verifique o log.%
+      }%
+    \fi
+  \fi
+}

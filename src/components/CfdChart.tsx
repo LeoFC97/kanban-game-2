@@ -10,11 +10,11 @@ import {
 } from 'recharts';
 import { useTranslation } from 'react-i18next';
 import type { CfdRow } from '../simulation/metrics';
-import type { ColumnId } from '../simulation/types';
+import { COLUMN_ORDER, type ColumnId } from '../simulation/types';
 
 type Props = { data: CfdRow[] };
 
-const CFD_COLS: ColumnId[] = ['backlog', 'ready', 'analise', 'dev', 'teste', 'deploy'];
+const CFD_COLS: ColumnId[] = [...COLUMN_ORDER];
 
 export function CfdChart({ data }: Props) {
   const { t } = useTranslation();
@@ -22,7 +22,6 @@ export function CfdChart({ data }: Props) {
 
   const strokes: Record<ColumnId, string> = {
     backlog: '#64748b',
-    ready: '#0ea5e9',
     analise: '#a855f7',
     dev: '#22c55e',
     teste: '#eab308',
@@ -30,7 +29,6 @@ export function CfdChart({ data }: Props) {
   };
   const fills: Record<ColumnId, string> = {
     backlog: '#94a3b8',
-    ready: '#38bdf8',
     analise: '#c084fc',
     dev: '#4ade80',
     teste: '#facc15',

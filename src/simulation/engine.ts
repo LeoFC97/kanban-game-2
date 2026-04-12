@@ -36,7 +36,7 @@ function addNote(
   notes.push(params ? { key, params } : { key });
 }
 
-function splitWork(p: number): { wa: number; wd: number; wt: number } {
+export function splitWork(p: number): { wa: number; wd: number; wt: number } {
   if (p <= 0) return { wa: 0, wd: 0, wt: 0 };
   const wa = Math.max(1, Math.round(0.3 * p));
   let wd = Math.max(1, Math.round(0.5 * p));
@@ -54,9 +54,36 @@ function splitWork(p: number): { wa: number; wd: number; wt: number } {
 }
 
 export function cardToBoardCard(c: Card): BoardCard {
-  const { wa, wd, wt } = splitWork(c.points);
+  const hasCustom =
+    c.workAnalise !== undefined && c.workDev !== undefined && c.workTeste !== undefined;
+  let wa: number;
+  let wd: number;
+  let wt: number;
+  let pointsOut: number;
+  if (hasCustom) {
+    wa = Math.max(0, Math.round(Number(c.workAnalise) || 0));
+    wd = Math.max(0, Math.round(Number(c.workDev) || 0));
+    wt = Math.max(0, Math.round(Number(c.workTeste) || 0));
+    const sum = wa + wd + wt;
+    if (sum < 1) {
+      const s = splitWork(Math.max(1, c.points));
+      wa = s.wa;
+      wd = s.wd;
+      wt = s.wt;
+      pointsOut = Math.max(1, c.points);
+    } else {
+      pointsOut = sum;
+    }
+  } else {
+    const s = splitWork(Math.max(1, c.points));
+    wa = s.wa;
+    wd = s.wd;
+    wt = s.wt;
+    pointsOut = Math.max(1, c.points);
+  }
   return {
     ...c,
+    points: pointsOut,
     taskKind: c.taskKind ?? 'backend',
     workAnalise: wa,
     workDev: wd,
@@ -76,7 +103,6 @@ export function initialBoard(config: GameConfig): BoardState {
   return {
     columns: {
       backlog: backlogIds,
-      ready: [],
       analise: [],
       dev: [],
       teste: [],
@@ -187,7 +213,8 @@ function handoffTraitBonus(a: Member, b: Member): number {
   );
 }
 
-function wipEffective(params: SimulationParams, members: Member[]): number {
+/** WIP máximo por coluna de fluxo (Análise / Dev / Teste), com ajuste pelos traços. */
+export function wipEffective(params: SimulationParams, members: Member[]): number {
   let d = 0;
   for (const m of members) d += resolveMemberModifiers(m).maxWipDelta;
   return Math.max(1, params.wipPerColumn + Math.round(d));
@@ -250,8 +277,6 @@ function applyAdvance(
   } else if (to === 'teste') {
     const base = Math.max(0, Math.round(card.workTeste / handoffMult));
     card.remainingInStage = base + reworkExtra;
-  } else if (to === 'ready') {
-    card.remainingInStage = 0;
   }
 }
 
@@ -275,19 +300,33 @@ function tryFinishStage(
   }
 }
 
-function pullReadyToAnalise(board: BoardState, wip: number, notes: LogNote[]): void {
-  while (board.columns.analise.length < wip && board.columns.ready.length > 0) {
-    const id = board.columns.ready.shift()!;
+/**
+ * Preenche Análise a partir do backlog respeitando WIP.
+ * Com `planningPullMax === 0` não corre (só entradas manuais no quadro), alinhado ao antigo fluxo sem pull automático.
+ */
+function pullBacklogToAnalise(
+  board: BoardState,
+  wip: number,
+  params: SimulationParams,
+  notes: LogNote[],
+  enteredReadyDay: Record<string, number>,
+  globalDay: number,
+): void {
+  if (params.planningPullMax <= 0) return;
+  while (board.columns.analise.length < wip && board.columns.backlog.length > 0) {
+    const id = board.columns.backlog.shift()!;
     const card = board.cardsById[id];
-    moveCard(board, id, 'ready', 'analise');
+    moveCard(board, id, 'backlog', 'analise');
     card.remainingInStage = card.workAnalise;
-    addNote(notes, 'engine.pullReadyAnalise', { title: card.title });
+    if (enteredReadyDay[id] === undefined) enteredReadyDay[id] = globalDay;
+    addNote(notes, 'engine.pullBacklogAnalise', { title: card.title });
   }
 }
 
 function planningStep(
   board: BoardState,
   params: SimulationParams,
+  wip: number,
   notes: LogNote[],
   globalDay: number,
   enteredReadyDay: Record<string, number>,
@@ -296,13 +335,15 @@ function planningStep(
   while (
     n < params.planningPullMax &&
     board.columns.backlog.length > 0 &&
-    board.columns.ready.length < params.planningPullMax
+    board.columns.analise.length < wip
   ) {
     const id = board.columns.backlog.shift()!;
-    moveCard(board, id, 'backlog', 'ready');
+    moveCard(board, id, 'backlog', 'analise');
+    const card = board.cardsById[id];
+    card.remainingInStage = card.workAnalise;
     enteredReadyDay[id] = globalDay;
     n++;
-    addNote(notes, 'engine.planningToReady', { title: board.cardsById[id].title });
+    addNote(notes, 'engine.planningToAnalise', { title: card.title });
   }
 }
 
@@ -323,18 +364,26 @@ function synergyCollabMultiplier(
   synergy: SynergyRuntime,
   p: SimulationParams,
 ): number {
-  if (card.assigneeIds.length < 2) return 1;
-  const [a, b] = card.assigneeIds;
-  const s = resolveSynergy(members, synergy.synergyByPair, a, b, {
-    synergyPairBidirectional: synergy.synergyPairBidirectional,
-    synergyDirected: synergy.synergyDirected,
-    mode: 'collaboration',
-  });
-  const t = collabTraitBonus(members, [a, b]);
+  const ids = card.assigneeIds;
+  if (ids.length < 2) return 1;
+  let pairSum = 0;
+  let pairCount = 0;
+  for (let i = 0; i < ids.length; i++) {
+    for (let j = i + 1; j < ids.length; j++) {
+      pairSum += resolveSynergy(members, synergy.synergyByPair, ids[i]!, ids[j]!, {
+        synergyPairBidirectional: synergy.synergyPairBidirectional,
+        synergyDirected: synergy.synergyDirected,
+        mode: 'collaboration',
+      });
+      pairCount++;
+    }
+  }
+  const s = pairCount === 0 ? 0 : pairSum / pairCount;
+  const t = collabTraitBonus(members, ids);
   return clamp(1 + p.synergyBeta * s + t, p.collabEffMin, p.collabEffMax);
 }
 
-/** Spend raw capacity `rawPool` on column; on Dev, cards with two assignees apply the collaboration multiplier. Returns raw capacity consumed. */
+/** Spend raw capacity `rawPool` on column; on Dev, cards with 2+ assignees apply the collaboration multiplier (average pairwise synergy). Returns raw capacity consumed. */
 function spendOnColumn(
   board: BoardState,
   col: ColumnId,
@@ -374,10 +423,12 @@ function workDayStep(
   effectiveCapacityByMemberId: Record<string, number>,
   capacityBreakdownByMemberId: Record<string, MemberDayCapacityBreakdown>,
   specialtyByTaskKind: Record<TaskKind, Specialty>,
+  enteredReadyDay: Record<string, number>,
+  globalDay: number,
   dayCapacityMultByMemberId?: Record<string, number>,
 ): void {
   const wip = wipEffective(params, members);
-  pullReadyToAnalise(board, wip, notes);
+  pullBacklogToAnalise(board, wip, params, notes, enteredReadyDay, globalDay);
 
   const specialtyCol = (m: Member): ColumnId | null => {
     const w = WORK_COLS.find((x) => x.specialty === m.specialty);
@@ -454,7 +505,7 @@ export type AssigneeRuleFailure = {
 
 export type UpdateCardAssigneesResult = { ok: true } | AssigneeRuleFailure;
 
-/** Valida e devolve IDs normalizados (mesmas regras do setup). */
+/** Valida e devolve IDs normalizados (membros válidos, sem duplicados, ordem preservada). */
 export function resolveAssigneesForCard(
   card: BoardCard,
   members: Member[],
@@ -462,32 +513,56 @@ export function resolveAssigneesForCard(
 ): { ok: true; ids: string[] } | AssigneeRuleFailure {
   const valid = new Set(members.map((m) => m.id));
   const filtered = assigneeIds.filter((id) => valid.has(id));
-  if (filtered.length < 1) {
-    return {
-      ok: false,
-      errorKey: 'errors.cardOneAssignee',
-      errorParams: { title: card.title },
-    };
-  }
-  const a = filtered[0]!;
-  const b = filtered[1];
-  if (b !== undefined) {
-    if (a === b) {
+  const uniq: string[] = [];
+  const seen = new Set<string>();
+  for (const id of filtered) {
+    if (seen.has(id)) {
       return {
         ok: false,
         errorKey: 'errors.assigneesMustBeDistinct',
         errorParams: { title: card.title },
       };
     }
-    return { ok: true, ids: [a, b] };
+    seen.add(id);
+    uniq.push(id);
   }
-  return { ok: true, ids: [a] };
+  if (uniq.length < 1) {
+    return {
+      ok: false,
+      errorKey: 'errors.cardOneAssignee',
+      errorParams: { title: card.title },
+    };
+  }
+  return { ok: true, ids: uniq };
 }
 
 function ceremonyFor(dayInSprint: number, days: number): CeremonyKind {
   if (dayInSprint === 1) return 'sprint_planning';
   if (dayInSprint === days) return 'sprint_review';
   return 'daily_scrum';
+}
+
+export type ManualMoveResult =
+  | { ok: true }
+  | { ok: false; errorKey: string; errorParams?: Record<string, string | number> };
+
+/** Arestas permitidas ao arrastar cartões manualmente (só avanço no fluxo). */
+export function isManualCardMoveAllowed(from: ColumnId, to: ColumnId): boolean {
+  const edges: Partial<Record<ColumnId, ColumnId[]>> = {
+    backlog: ['analise'],
+    analise: ['dev'],
+    dev: ['teste'],
+    teste: ['deploy'],
+  };
+  return edges[from]?.includes(to) ?? false;
+}
+
+const MANUAL_ADVANCE_FROM_COLS: ColumnId[] = ['analise', 'dev', 'teste'];
+
+/** Em Análise / Dev / Testes, só avança manualmente para a coluna seguinte com `remainingInStage === 0`. */
+export function canManuallyAdvanceCardFromColumn(card: BoardCard, fromCol: ColumnId): boolean {
+  if (!MANUAL_ADVANCE_FROM_COLS.includes(fromCol)) return true;
+  return card.remainingInStage <= 1e-9;
 }
 
 export type InteractiveRunner = {
@@ -502,6 +577,11 @@ export type InteractiveRunner = {
    * Afeta sinergia em Dev e donos de handoff nas etapas seguintes.
    */
   updateCardAssignees: (cardId: string, assigneeIds: string[]) => UpdateCardAssigneesResult;
+  /**
+   * Move um cartão entre colunas (arrastar no quadro). Respeita WIP em Análise/Dev/Teste.
+   * Atualiza `columnCounts` do último dia no log (para o CFD) quando já existe histórico.
+   */
+  manualMoveCard: (cardId: string, toColumn: ColumnId) => ManualMoveResult;
 };
 
 /** Avança um dia de calendário (rito + trabalho) ou uma retrospectiva; `null` quando terminou todos os sprints. */
@@ -550,8 +630,9 @@ export function createInteractiveRunner(config: GameConfig): InteractiveRunner {
       let dailyRandomEvents: DailyRandomEventLog[] | undefined;
 
       if (ceremony === 'sprint_planning') {
-        planningStep(board, params, notes, globalDay, enteredReadyDay);
-        pullReadyToAnalise(board, wipEffective(params, members), notes);
+        const wip = wipEffective(params, members);
+        planningStep(board, params, wip, notes, globalDay, enteredReadyDay);
+        pullBacklogToAnalise(board, wip, params, notes, enteredReadyDay, globalDay);
       } else if (ceremony === 'daily_scrum' || ceremony === 'sprint_review') {
         if (ceremony === 'sprint_review') {
           addNote(notes, 'engine.sprintReviewDay');
@@ -569,6 +650,8 @@ export function createInteractiveRunner(config: GameConfig): InteractiveRunner {
           effectiveCapacityByMemberId,
           capacityBreakdownByMemberId,
           specialtyByTaskKind,
+          enteredReadyDay,
+          globalDay,
           rolled.capacityMultByMemberId,
         );
       }
@@ -625,11 +708,52 @@ export function createInteractiveRunner(config: GameConfig): InteractiveRunner {
     return { ok: true };
   }
 
+  function manualMoveCard(cardId: string, toColumn: ColumnId): ManualMoveResult {
+    const fromCol = columnOfCard(board, cardId);
+    if (!fromCol) return { ok: false, errorKey: 'play.manualMoveUnknownCard' };
+    if (fromCol === toColumn) return { ok: true };
+    if (fromCol === 'deploy') {
+      return { ok: false, errorKey: 'play.manualMoveFromDeploy' };
+    }
+    if (!isManualCardMoveAllowed(fromCol, toColumn)) {
+      return { ok: false, errorKey: 'play.manualMoveNotAllowed' };
+    }
+    const card = board.cardsById[cardId];
+    if (!card) return { ok: false, errorKey: 'play.manualMoveUnknownCard' };
+    if (!canManuallyAdvanceCardFromColumn(card, fromCol)) {
+      return { ok: false, errorKey: 'play.manualMoveStageIncomplete' };
+    }
+    const wip = wipEffective(params, members);
+    const wipCols: ColumnId[] = ['analise', 'dev', 'teste'];
+    if (wipCols.includes(toColumn) && board.columns[toColumn].length >= wip) {
+      return {
+        ok: false,
+        errorKey: 'play.manualMoveWipFull',
+        errorParams: { wip, col: toColumn },
+      };
+    }
+    const notes: LogNote[] = [];
+    applyAdvance(board, card, fromCol, toColumn, members, synergy, params, rng, notes, specialtyByTaskKind);
+    if (
+      enteredReadyDay[cardId] === undefined &&
+      fromCol === 'backlog' &&
+      toColumn === 'analise'
+    ) {
+      enteredReadyDay[cardId] = globalDay;
+    }
+    recordDeploys();
+    if (logs.length > 0) {
+      logs[logs.length - 1]!.columnCounts = countColumns(board);
+    }
+    return { ok: true };
+  }
+
   return {
     getBoard: () => board,
     getLogs: () => logs,
     getCompleted: () => completed,
     updateCardAssignees,
+    manualMoveCard,
     step: stepImpl,
     advanceUntilAfterRetro(): void {
       while (true) {

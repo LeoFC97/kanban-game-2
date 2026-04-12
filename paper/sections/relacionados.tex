@@ -10,5 +10,34 @@ O \emph{Kanban Simulator}~\cite{kanbanSimulator} popularizou a dinâmica de dado
 \paragraph{Fatores humanos e equipes.}
 Estudos em psicologia organizacional e engenharia de software discutem coesão, confiança e conflito. Nosso enquadramento não pretende substituir instrumentos psicométricos: a sinergia $s_{ij}\in[-1,1]$ é um \textbf{parâmetro} explícito do modelo, interpretável como um resumo operacional de facilitação ou atrito entre pares \emph{sob as regras do simulador}. Traços individuais funcionam como ``perfiladores'' leves que alteram coeficientes do mesmo núcleo mecânico, permitindo contrastar hipóteses sem multiplicar famílias de modelos.
 
+\subsection{Comparação com simuladores e jogos de fluxo próximos}
+A Tabela~\ref{tab:comparacaoSoftware} posiciona a proposta face a três famílias frequentes em ensino e consultoria: um simulador \emph{web} amplamente usado~\cite{kanbanSimulator}, um jogo de tabuleiro de referência para Kanban~\cite{getkanban}, e laboratórios ou \emph{serious games} ágeis genéricos (planilhas, ``post-its'' digitais, \emph{hackathons} de processo). Os julgamentos são qualitativos: ``Sim'' indica suporte explícito e utilizável no desenho típico da ferramenta; ``Parcial'' indica existência limitada, dependente de facilitador ou não formalizada em equações; ``Não'' indica ausência típica ou não aplicável.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Comparação qualitativa entre abordagens próximas e a proposta (motor + aplicação web + artefactos de artigo).}
+  \label{tab:comparacaoSoftware}
+  \small
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{@{}>{\raggedright\arraybackslash}p{3.15cm}>{\centering\arraybackslash}p{2.35cm}>{\centering\arraybackslash}p{2.35cm}>{\centering\arraybackslash}p{2.35cm}>{\centering\arraybackslash}p{2.85cm}@{}}
+    \toprule
+    Critério & Kanban Simulator\newline\cite{kanbanSimulator} & getKanban\newline\cite{getkanban} & Serious games\newline/labs genéricos & Esta proposta \\
+    \midrule
+    Veículo usual & App web comercial & Jogo físico / facilitado & Curso, folha, \emph{mash-up} & Web OSS + \LaTeX{} \\
+    Regras formalizáveis em texto acadêmico & Parcial & Parcial (manual/cartas) & Parcial / ad hoc & Sim \\
+    Código aberto versionável & Não & Não & Ocasional & Sim \\
+    Reprodutibilidade (\emph{seed}, config exportável) & Limitada & Baixa & Variável & Sim \\
+    Sinergia par-a-par $s_{ij}$ no motor & Não & Não & Raro & Sim \\
+    Traços individuais com efeitos numéricos rastreados & Não / muito leve & Eventos narrativos & Raro & Sim \\
+    Handoff + retrabalho com parâmetros OR & Simplificado & Decisão de mesa & Variável & Sim \\
+    Calendário Scrum sobreposto ao fluxo & Parcial & Sim (pedagógico) & Variável & Sim (v1) \\
+    CFD / tempo de ciclo na interface & Sim & Manual & Variável & Sim \\
+    Figuras/tabelas geradas a partir do motor (artigo) & Não & Não & Não & Sim \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+O quadro não pretende desvalorizar simuladores comerciais ou jogos de tabuleiro, que permanecem excelentes para \emph{engajamento} e dinâmica de grupo. A lacuna que endereçamos é outra: \textbf{declarar} um conjunto mínimo de equações e parâmetros, \textbf{executá-los} no mesmo ficheiro que gera números do PDF e \textbf{permitir} contrastes A/B sem ambiguidade de implementação. Em trabalhos futuros, linhas adicionais poderiam incluir simuladores académicos de código aberto específicos de filas de defeitos ou de \emph{release planning}, desde que existam referências estáveis.
+
 \paragraph{Síntese.}
 Diferentemente de abordagens puramente narrativas ou de \emph{caixas-pretas}, o arcabouço aqui descrito prioriza transparência algorítmica (implementação em TypeScript no repositório associado) e um pacote mínimo de cenários A/B para análise de sensibilidade.

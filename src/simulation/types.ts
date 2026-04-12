@@ -3,13 +3,7 @@ export type Specialty = 'Analista' | 'Desenvolvedor' | 'Testador';
 /** Categoria de trabalho do cartão (afeta qual assignee é tratado como especialista da tarefa no motor). */
 export type TaskKind = 'backend' | 'frontend' | 'infrastructure' | 'design' | 'data';
 
-export type ColumnId =
-  | 'backlog'
-  | 'ready'
-  | 'analise'
-  | 'dev'
-  | 'teste'
-  | 'deploy';
+export type ColumnId = 'backlog' | 'analise' | 'dev' | 'teste' | 'deploy';
 
 export type TraitKind = 'quality' | 'flaw';
 
@@ -74,9 +68,16 @@ export interface Card {
   id: string;
   title: string;
   points: number;
+  /**
+   * Trabalho por etapa (unidades consumidas no motor). Se os três estiverem definidos,
+   * substituem o particionamento automático a partir de `points`; `points` deve refletir a soma.
+   */
+  workAnalise?: number;
+  workDev?: number;
+  workTeste?: number;
   /** Tipo de tarefa; o especialista por tipo define o cargo de referência em handoffs (entre assignees da mesma etapa). */
   taskKind?: TaskKind;
-  /** 1 ou 2 ids; com 2 pessoas aplica-se sinergia de par em Dev. */
+  /** Responsáveis (membros da equipa); em Dev, com 2+ pessoas aplica-se multiplicador de colaboração (sinergia média entre pares). */
   assigneeIds: string[];
   /** Valor de negócio se entregue no prazo (mesma unidade monetária da UI). */
   businessValue?: number;
@@ -106,7 +107,7 @@ export interface SimulationParams {
   seed: number;
   /** Max cards per workflow column (analise/dev/teste) */
   wipPerColumn: number;
-  /** Max cards moved backlog→ready per planning */
+  /** Max cards movidos do backlog para Análise no Planning (respeitando WIP). `0` = só arrastar no quadro. */
   planningPullMax: number;
   synergyBeta: number;
   synergyGamma: number;
@@ -213,14 +214,8 @@ export interface BoardState {
   cardsById: Record<string, BoardCard>;
 }
 
-export const COLUMN_ORDER: ColumnId[] = [
-  'backlog',
-  'ready',
-  'analise',
-  'dev',
-  'teste',
-  'deploy',
-];
+/** Ordem do fluxo: backlog (fila) e as quatro etapas obrigatórias Análise → Dev → Testes → Deploy. */
+export const COLUMN_ORDER: ColumnId[] = ['backlog', 'analise', 'dev', 'teste', 'deploy'];
 
 export function specialtyForColumn(col: ColumnId): Specialty | null {
   if (col === 'analise') return 'Analista';
