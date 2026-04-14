@@ -143,8 +143,15 @@
       "needAnotherMember": "Añade otro miembro para editar sinergia por persona."
     },
     "params": {
-      "daysPerSprint": "Días por sprint",
-      "numSprints": "N.º de sprints",
+      "sprintScheduleTitle": "Sprints y calendario",
+      "sprintScheduleLede": "Elige cuántos días dura cada sprint y cuántos ciclos completos juegas. Cada paso es un día global: el día 1 es Planning; los días intermedios son Daily y trabajo en el tablero; el último día del sprint es Sprint Review (también con trabajo); después hay un paso de retrospectiva antes del siguiente sprint.",
+      "daysPerSprint": "Duración de un sprint (días)",
+      "daysPerSprintHint": "Entre 3 y 30. El primer día del sprint es Planning; el último es Sprint Review. Los demás son Daily con gasto de capacidad en el tablero.",
+      "daysPerSprintRangeAria": "Ajustar días por sprint: {{n}}",
+      "numSprints": "Cantidad de sprints",
+      "numSprintsHint": "Cuántos ciclos completos se juegan (cada uno termina con un día de retrospectiva que también avanza el contador global de días).",
+      "numSprintsRangeAria": "Ajustar cantidad de sprints: {{n}}",
+      "sprintSummary": "Vista previa del calendario global: unos {{totalSteps}} pasos — {{numSprints}} sprints × ({{daysPerSprint}} días de sprint + 1 día de retrospectiva).",
       "seed": "Semilla (reproducibilidad)",
       "wipPerColumn": "WIP por columna",
       "planningPullMax": "Máx. tarjetas en Planning",

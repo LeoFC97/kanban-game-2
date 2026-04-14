@@ -80,6 +80,25 @@ export function SetupScreen({ value, onChange, onStart }: Props) {
     onChange({ ...value, params: { ...value.params, ...p } });
   }
 
+  const sprintCalendar = useMemo(() => {
+    const daysPerSprint = value.params.daysPerSprint;
+    const numSprints = value.params.numSprints;
+    const totalSteps = numSprints * (daysPerSprint + 1);
+    return { daysPerSprint, numSprints, totalSteps };
+  }, [value.params.daysPerSprint, value.params.numSprints]);
+
+  function setDaysPerSprint(raw: number) {
+    const v = Math.round(Number(raw));
+    const next = Number.isFinite(v) ? v : 10;
+    patchParams({ daysPerSprint: Math.max(3, Math.min(30, next)) });
+  }
+
+  function setNumSprints(raw: number) {
+    const v = Math.round(Number(raw));
+    const next = Number.isFinite(v) ? v : 3;
+    patchParams({ numSprints: Math.max(1, Math.min(50, next)) });
+  }
+
   function patchMember(i: number, m: Partial<Member>) {
     const members = value.members.map((x, j) => (j === i ? { ...x, ...m } : x));
     onChange({ ...value, members, synergyByPair: ensureSynergyKeys(members, value.synergyByPair) });
@@ -559,29 +578,74 @@ export function SetupScreen({ value, onChange, onStart }: Props) {
 
       <section className="panel">
         <h2>{t('setup.paramsTitle')}</h2>
+        <div className="setup-sprint-panel">
+          <h3 className="setup-subsection-title">{t('setup.params.sprintScheduleTitle')}</h3>
+          <p className="muted small setup-sprint-lede">{t('setup.params.sprintScheduleLede')}</p>
+          <div className="setup-sprint-controls">
+            <div className="setup-sprint-field">
+              <label className="setup-sprint-field-label" htmlFor="setup-dps">
+                {t('setup.params.daysPerSprint')}
+              </label>
+              <div className="setup-sprint-inline">
+                <input
+                  type="range"
+                  className="setup-sprint-range"
+                  min={3}
+                  max={30}
+                  step={1}
+                  value={sprintCalendar.daysPerSprint}
+                  onChange={(e) => setDaysPerSprint(Number(e.target.value))}
+                  aria-label={t('setup.params.daysPerSprintRangeAria', { n: sprintCalendar.daysPerSprint })}
+                />
+                <input
+                  id="setup-dps"
+                  type="number"
+                  min={3}
+                  max={30}
+                  className="input setup-sprint-num"
+                  value={value.params.daysPerSprint}
+                  onChange={(e) => setDaysPerSprint(Number(e.target.value))}
+                />
+              </div>
+              <p className="muted small setup-sprint-hint">{t('setup.params.daysPerSprintHint')}</p>
+            </div>
+            <div className="setup-sprint-field">
+              <label className="setup-sprint-field-label" htmlFor="setup-ns">
+                {t('setup.params.numSprints')}
+              </label>
+              <div className="setup-sprint-inline">
+                <input
+                  type="range"
+                  className="setup-sprint-range"
+                  min={1}
+                  max={50}
+                  step={1}
+                  value={sprintCalendar.numSprints}
+                  onChange={(e) => setNumSprints(Number(e.target.value))}
+                  aria-label={t('setup.params.numSprintsRangeAria', { n: sprintCalendar.numSprints })}
+                />
+                <input
+                  id="setup-ns"
+                  type="number"
+                  min={1}
+                  max={50}
+                  className="input setup-sprint-num"
+                  value={value.params.numSprints}
+                  onChange={(e) => setNumSprints(Number(e.target.value))}
+                />
+              </div>
+              <p className="muted small setup-sprint-hint">{t('setup.params.numSprintsHint')}</p>
+            </div>
+          </div>
+          <p className="setup-sprint-summary" role="status">
+            {t('setup.params.sprintSummary', {
+              totalSteps: sprintCalendar.totalSteps,
+              numSprints: sprintCalendar.numSprints,
+              daysPerSprint: sprintCalendar.daysPerSprint,
+            })}
+          </p>
+        </div>
         <div className="params-grid">
-          <label>
-            {t('setup.params.daysPerSprint')}
-            <input
-              type="number"
-              min={3}
-              max={30}
-              className="input"
-              value={value.params.daysPerSprint}
-              onChange={(e) => patchParams({ daysPerSprint: Math.max(3, Number(e.target.value) || 10) })}
-            />
-          </label>
-          <label>
-            {t('setup.params.numSprints')}
-            <input
-              type="number"
-              min={1}
-              max={50}
-              className="input"
-              value={value.params.numSprints}
-              onChange={(e) => patchParams({ numSprints: Math.max(1, Number(e.target.value) || 3) })}
-            />
-          </label>
           <label>
             {t('setup.params.seed')}
             <input
