@@ -110,7 +110,13 @@ export function AssigneeSlotsRow({
         onDragOver={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          e.dataTransfer.dropEffect = 'copy';
+          // O chip arrastado de um slot usa effectAllowed='move'; o nome arrastado da
+          // pool de equipa usa 'copy'. Se mantivermos dropEffect fixo, o browser
+          // rejeita o drop quando os dois lados não coincidem (cursor "proibido").
+          const ea = e.dataTransfer.effectAllowed;
+          const isMove =
+            ea === 'move' || ea === 'copyMove' || ea === 'linkMove' || ea === 'all';
+          e.dataTransfer.dropEffect = isMove ? 'move' : 'copy';
         }}
         onDrop={(e) => {
           e.preventDefault();
