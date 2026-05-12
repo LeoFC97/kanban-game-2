@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ColumnId, DayLog, GameConfig } from '../simulation/types';
 import {
@@ -51,21 +51,18 @@ export function PlayScreen({ config, onBackToSetup }: Props) {
   const completed = runner.getCompleted();
   const lastLog = logs[logs.length - 1];
   const cfdData = buildCfdSeries(logs);
-  const financialSummary = useMemo(
-    () => buildFinancialSummary(config.backlogCards, completed, config.params),
-    [config.backlogCards, config.params, completed],
-  );
+  // `completed` é o array mutado em-place pelo runner; useMemo com ele como dep
+  // não invalida quando o array cresce. Cálculo direto a cada render.
+  const financialSummary = buildFinancialSummary(config.backlogCards, completed, config.params);
   const lastGlobalDay = lastLog?.globalDay ?? 0;
 
-  const membersMissingFromCards = useMemo(
-    () => membersNotAssignedToAnyCard(board, config.members),
-    [board, config.members],
-  );
-  const membersOverbooked = useMemo(
-    () => membersAssignedToMultipleWorkCards(board, config.members),
-    [board, config.members],
-  );
-  const unassignedActiveCardTitles = useMemo(() => {
+  // ATENÇÃO: o `runner` muta `board` em-place; a referência do board não muda
+  // entre renders. Usar useMemo com [board] aqui causa staleness (cache nunca
+  // invalida). Cálculo direto a cada render é correto e barato para um quadro
+  // de poucas dezenas de cartões.
+  const membersMissingFromCards = membersNotAssignedToAnyCard(board, config.members);
+  const membersOverbooked = membersAssignedToMultipleWorkCards(board, config.members);
+  const unassignedActiveCardTitles: string[] = (() => {
     const out: string[] = [];
     const activeCols: ColumnId[] = ['analise', 'dev', 'teste'];
     for (const col of activeCols) {
@@ -75,7 +72,7 @@ export function PlayScreen({ config, onBackToSetup }: Props) {
       }
     }
     return out;
-  }, [board]);
+  })();
   const enforceAllocationRules = !config.params.clearAssigneesAfterEachDay;
   const blockAdvanceByAllocation =
     enforceAllocationRules &&
