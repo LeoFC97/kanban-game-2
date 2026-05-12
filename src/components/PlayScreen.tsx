@@ -178,12 +178,17 @@ export function PlayScreen({ config, onBackToSetup }: Props) {
       const pulse = buildWorkFillPulse(before, boardAfter);
       setWorkFillPulse(pulse);
       const dwellMs = workFillPulseDisplayMs(pulse, boardAfter) + 220;
+      const dayLog = log;
       const tid = window.setTimeout(() => {
         setWorkFillPulse(null);
+        // Abre o modal de detalhes após a animação dos quadrados terminar.
+        setDayModalLog(dayLog);
       }, dwellMs);
       workAnimTimersRef.current.push(tid);
     } else {
       setWorkFillPulse(null);
+      // Planning / Retrospectiva: sem animação, abre o modal imediatamente.
+      if (log) setDayModalLog(log);
     }
   };
 

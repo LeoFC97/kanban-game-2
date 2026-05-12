@@ -30,8 +30,13 @@ export function defaultParams(): SimulationParams {
     planningPullMax: 0,
     /** Só o jogador move o cartão para a coluna seguinte quando a etapa fica a zero. */
     autoAdvanceOnStageComplete: false,
-    /** Ao fim de cada dia útil/planning, responsáveis são limpos para forçar realocação manual. */
-    clearAssigneesAfterEachDay: true,
+    /**
+     * Quando `true`, responsáveis dos cartões em colunas ativas são limpos ao fim de
+     * cada dia útil/planning, forçando o jogador a realocar manualmente todo dia.
+     * Default `false`: assignees persistem entre dias (cartão segue recebendo trabalho
+     * enquanto tiver pelo menos 1 responsável; cartões sem responsável são pulados).
+     */
+    clearAssigneesAfterEachDay: false,
     synergyBeta: 0.35,
     synergyGamma: 0.25,
     collabEffMin: 0.55,
