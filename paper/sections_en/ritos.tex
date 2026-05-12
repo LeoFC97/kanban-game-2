@@ -1,0 +1,25 @@
+\section{Scrum ceremonies on the calendar}
+\label{sec:ritos}
+
+For each sprint $k=1,\dots,K$, we index days $d=1,\dots,D$ and one additional formal \emph{retrospective} day without mechanical state change in the current prototype (log entry only).
+
+\begin{table}[htbp]
+  \centering
+  \caption{Simple mapping between day-in-sprint and processing mode.}
+  \label{tab:ritos}
+  \begin{tabular}{@{}llp{7.2cm}@{}}
+    \toprule
+    Day $d$ & Ceremony / mode & Engine effect (v1) \\
+    \midrule
+    $1$ & \emph{Sprint Planning} & Pull cards from \texttt{backlog} into \texttt{analise} up to $P_{\max}$ (and WIP); then, if $P_{\max}>0$, keep filling \texttt{analise} from \texttt{backlog} up to WIP. \\
+    $2,\dots,D-1$ & \emph{Daily Scrum} & Working day: apply capacity, allocation, and advances. \\
+    $D$ & \emph{Sprint Review} & Also a working day (same mechanics), with an explicit log marker. \\
+    $D{+}1$ & \emph{Retrospective} & No mechanical effect; ends the sprint and resets $d\leftarrow 1$. \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The pedagogical separation between a Daily ``marker'' and work processing supports classroom narratives: the Scrum calendar appears as \textbf{rhythm} overlaid on Kanban \textbf{flow}~\cite{schwaber2002agile}, without modeling meeting hours in the first version. In OR terms, ceremonies act as \textbf{modes} of the same simulation clock: they change which transitions are enabled at the start of the day (pull \emph{vs.} process only), while preserving a single system state across days.
+
+\paragraph{Random capacity events (Daily and Review).}
+On \emph{Daily Scrum} and \emph{Sprint Review} days, the engine applies a configurable global probability (\texttt{dailyRandomEventChance}): with that probability, draw \emph{at most} one event from a weighted catalog (sickness, vacation, half-day, team meeting, infrastructure incident, positive ``morale''), each applying a multiplier or zeroing effective capacity for affected members. Events appear in \texttt{DayLog} and are listed in the UI for pedagogy.

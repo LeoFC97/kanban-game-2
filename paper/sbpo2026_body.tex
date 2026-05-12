@@ -1,0 +1,30 @@
+% Shared body: drivers must define \SBPOBabelOptions, \SBPOSectionDir, \SBPOMainTitle,
+% \SBPOMainKeywordsLabel, \SBPOMainKeywordsList before \input{preamble_sbpo} + this file.
+\sbpoLimitPagestrue
+
+\title{\SBPOMainTitle}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\input{\SBPOSectionDir/resumo}
+\end{abstract}
+
+\noindent\textbf{\SBPOMainKeywordsLabel:} \SBPOMainKeywordsList
+
+\input{\SBPOSectionDir/introducao}
+\input{\SBPOSectionDir/relacionados}
+\input{\SBPOSectionDir/modelo}
+\input{\SBPOSectionDir/ritos}
+\input{\SBPOSectionDir/arquitetura}
+\input{\SBPOSectionDir/experimentos}
+\input{\SBPOSectionDir/resultados}
+\input{\SBPOSectionDir/discussao}
+\input{\SBPOSectionDir/conclusao}
+
+\bibliographystyle{plain}
+\bibliography{bibliografia}
+
+\end{document}

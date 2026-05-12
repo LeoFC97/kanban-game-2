@@ -1,35 +1,35 @@
 \section{Trabalhos relacionados}
 \label{sec:relacionados}
 
-\paragraph{Simulação e fluxo em desenvolvimento de software.}
-A literatura de simulação a eventos discretos e de teoria de filas aplica-se naturalmente a processos de conhecimento~\cite{banks2010discrete}, embora a estimação de parâmetros e a validação sejam desafios conhecidos. Em engenharia de software, métricas como throughput, tempo de ciclo e diagramas de fluxo cumulativo (CFD) tornaram-se linguagem comum em iniciativas lean/Kanban~\cite{anderson2010kanban}. Modelos pedagógicos baseados em cartões e colunas ajudam a ilustrar WIP e variabilidade, frequentemente com componente estocástica na capacidade diária.
+\paragraph{Simulação e fluxo no desenvolvimento de software.}
+Simulação de eventos discretos e teoria de filas aplicam-se naturalmente ao trabalho do conhecimento~\cite{banks2010discrete,chwif2014modelagem}, embora estimação de parâmetros e validação permaneçam desafios conhecidos~\cite{kellner1999software}. Kellner et al.~\cite{kellner1999software} sistematizam motivações, escopo e técnicas de simulação de processos de software; Madachy~\cite{madachy2008software} estende essa base com dinâmica de sistemas e DES aplicada a projetos. Anderson et al.~\cite{anderson2012comparative} comparam Scrum e Kanban por simulação em caso real, resultado próximo do tipo de contraste que propomos. Em engenharia de software, métricas como \emph{throughput}, tempo de ciclo e diagramas de fluxo cumulativo (CFD) tornaram-se linguagem comum em iniciativas \emph{lean}/Kanban~\cite{anderson2010kanban}; a relação $L=\lambda W$~\cite{little1961proof} e a análise de variabilidade fabril~\cite{hopp2008factory,reinertsen2009principles} fundamentam o uso de limites de WIP. Modelos pedagógicos de cartões e colunas ajudam a ilustrar WIP e variabilidade, frequentemente com componente estocástica na capacidade diária.
 
 \paragraph{Simuladores e jogos sérios.}
-O \emph{Kanban Simulator}~\cite{kanbanSimulator} popularizou a dinâmica de dados por membro e bônus de especialidade na coluna correspondente, além de métricas de fluxo. Do ponto de vista de Pesquisa Operacional, tais ferramentas são valiosas como \emph{intuição}, mas nem sempre expõem todas as regras necessárias para replicação acadêmica estrita. Em paralelo, \emph{jogos sérios} e laboratórios de software têm sido usados para ensinar políticas de filas e efeitos de gargalo; nosso foco aqui é complementar: um motor declarativo, versionável e inspecionável.
+O \emph{Kanban Simulator}~\cite{kanbanSimulator} popularizou dinâmicas de dados por membro e bônus de especialista na coluna correspondente, juntamente com métricas de fluxo. Sob a ótica de PO, tais ferramentas são valiosas para a \emph{intuição}, mas nem sempre expõem todas as regras necessárias à replicação acadêmica estrita. Em paralelo, \emph{jogos sérios} e laboratórios de software têm sido usados para ensinar políticas de filas e efeitos de gargalo---von Wangenheim et al.~\cite{vonwangenheim2013scrumia} propõem o SCRUMIA, jogo educacional para ensino de Scrum em cursos de computação; nosso foco é complementar: um motor declarativo, versionado e inspecionável.
 
 \paragraph{Fatores humanos e equipes.}
-Estudos em psicologia organizacional e engenharia de software discutem coesão, confiança e conflito. Nosso enquadramento não pretende substituir instrumentos psicométricos: a sinergia $s_{ij}\in[-1,1]$ é um \textbf{parâmetro} explícito do modelo, interpretável como um resumo operacional de facilitação ou atrito entre pares \emph{sob as regras do simulador}. Traços individuais funcionam como ``perfiladores'' leves que alteram coeficientes do mesmo núcleo mecânico, permitindo contrastar hipóteses sem multiplicar famílias de modelos.
+Psicologia organizacional e estudos em engenharia de software discutem coesão, confiança e conflito. Hoegl e Gemuenden~\cite{hoegl2001teamwork} propõem um construto de \emph{teamwork quality} que associa qualidade da colaboração ao sucesso de projetos inovadores; Herbsleb e Mockus~\cite{herbsleb2003empirical} quantificam empiricamente como coordenação entre pares afeta a velocidade de entrega em desenvolvimento distribuído. Nosso enquadramento não substitui instrumentos psicométricos: a sinergia $s_{ij}\in[-1,1]$ é um \textbf{parâmetro} explícito do modelo, interpretável como resumo operacional de facilitação ou atrito entre pares \emph{sob as regras do simulador}, acoplada ao mesmo núcleo mecânico de fluxo e capacidade.
 
 \subsection{Comparação com simuladores e jogos de fluxo próximos}
-A Tabela~\ref{tab:comparacaoSoftware} posiciona a proposta face a três famílias frequentes em ensino e consultoria: um simulador \emph{web} amplamente usado~\cite{kanbanSimulator}, um jogo de tabuleiro de referência para Kanban~\cite{getkanban}, e laboratórios ou \emph{serious games} ágeis genéricos (planilhas, ``post-its'' digitais, \emph{hackathons} de processo). Os julgamentos são qualitativos: ``Sim'' indica suporte explícito e utilizável no desenho típico da ferramenta; ``Parcial'' indica existência limitada, dependente de facilitador ou não formalizada em equações; ``Não'' indica ausência típica ou não aplicável.
+A Tabela~\ref{tab:comparacaoSoftware} posiciona a proposta em relação a três famílias comuns no ensino e na consultoria: um simulador \emph{web} amplamente usado~\cite{kanbanSimulator}, um jogo de tabuleiro Kanban de referência~\cite{getkanban}, e laboratórios ágeis ou jogos sérios genéricos (planilhas, post-its digitais, \emph{hackathons} de processo). Os julgamentos são qualitativos: ``Sim'' indica suporte explícito no desenho típico da ferramenta; ``Parcial'' indica existência limitada, dependência do facilitador ou ausência de formalização em equações; ``Não'' indica ausência típica ou não aplicabilidade.
 
 \begin{table}[htbp]
   \centering
-  \caption{Comparação qualitativa entre abordagens próximas e a proposta (motor + aplicação web + artefactos de artigo).}
+  \caption{Comparação qualitativa de abordagens próximas e da proposta (motor + aplicação web + artefatos do artigo).}
   \label{tab:comparacaoSoftware}
   \small
   \setlength{\tabcolsep}{3pt}
   \begin{tabular}{@{}>{\raggedright\arraybackslash}p{3.15cm}>{\centering\arraybackslash}p{2.35cm}>{\centering\arraybackslash}p{2.35cm}>{\centering\arraybackslash}p{2.35cm}>{\centering\arraybackslash}p{2.85cm}@{}}
     \toprule
-    Critério & Kanban Simulator\newline\cite{kanbanSimulator} & getKanban\newline\cite{getkanban} & Serious games\newline/labs genéricos & Esta proposta \\
+    Critério & Kanban Simulator\newline\cite{kanbanSimulator} & getKanban\newline\cite{getkanban} & Jogos sérios genéricos\newline/labs & Esta proposta \\
     \midrule
-    Veículo usual & App web comercial & Jogo físico / facilitado & Curso, folha, \emph{mash-up} & Web OSS + \LaTeX{} \\
-    Regras formalizáveis em texto acadêmico & Parcial & Parcial (manual/cartas) & Parcial / ad hoc & Sim \\
-    Código aberto versionável & Não & Não & Ocasional & Sim \\
-    Reprodutibilidade (\emph{seed}, config exportável) & Limitada & Baixa & Variável & Sim \\
-    Sinergia par-a-par $s_{ij}$ no motor & Não & Não & Raro & Sim \\
-    Traços individuais com efeitos numéricos rastreados & Não / muito leve & Eventos narrativos & Raro & Sim \\
-    Handoff + retrabalho com parâmetros OR & Simplificado & Decisão de mesa & Variável & Sim \\
+    Meio típico & Aplicação web comercial & Jogo físico / facilitado & Curso, planilha, \emph{mash-up} & Web OSS + \LaTeX{} \\
+    Regras formalizáveis em texto acadêmico & Parcial & Parcial (manual/cartões) & Parcial / ad hoc & Sim \\
+    Código-fonte aberto e versionado & Não & Não & Ocasional & Sim \\
+    Reprodutibilidade (semente, config. exportável) & Limitada & Baixa & Variável & Sim \\
+    Sinergia par a par $s_{ij}$ no motor & Não & Não & Raro & Sim \\
+    Traços individuais com efeitos numéricos rastreados & Não / muito leve & Eventos narrativos & Raro & Não \\
+    Repasse + retrabalho com parâmetros de PO & Simplificado & Decisões de tabela & Variável & Sim \\
     Calendário Scrum sobreposto ao fluxo & Parcial & Sim (pedagógico) & Variável & Sim (v1) \\
     CFD / tempo de ciclo na interface & Sim & Manual & Variável & Sim \\
     Figuras/tabelas geradas a partir do motor (artigo) & Não & Não & Não & Sim \\
@@ -37,7 +37,7 @@ A Tabela~\ref{tab:comparacaoSoftware} posiciona a proposta face a três família
   \end{tabular}
 \end{table}
 
-O quadro não pretende desvalorizar simuladores comerciais ou jogos de tabuleiro, que permanecem excelentes para \emph{engajamento} e dinâmica de grupo. A lacuna que endereçamos é outra: \textbf{declarar} um conjunto mínimo de equações e parâmetros, \textbf{executá-los} no mesmo ficheiro que gera números do PDF e \textbf{permitir} contrastes A/B sem ambiguidade de implementação. Em trabalhos futuros, linhas adicionais poderiam incluir simuladores académicos de código aberto específicos de filas de defeitos ou de \emph{release planning}, desde que existam referências estáveis.
+A tabela não pretende desvalorizar simuladores comerciais ou jogos de tabuleiro, que permanecem excelentes para \emph{engajamento} e dinâmica de grupo. A lacuna que abordamos é outra: \textbf{declarar} um conjunto mínimo de equações e parâmetros, \textbf{executá-los} no mesmo código que produz os números do PDF e \textbf{permitir} contrastes A/B sem ambiguidade de implementação. Linhas futuras poderiam incluir outros simuladores acadêmicos \emph{open source}, para filas de defeitos ou planejamento de \emph{release}, desde que existam referências estáveis.
 
 \paragraph{Síntese.}
-Diferentemente de abordagens puramente narrativas ou de \emph{caixas-pretas}, o arcabouço aqui descrito prioriza transparência algorítmica (implementação em TypeScript no repositório associado) e um pacote mínimo de cenários A/B para análise de sensibilidade.
+Diferentemente de abordagens puramente narrativas ou caixas-pretas, o arcabouço aqui descrito prioriza transparência algorítmica (implementação TypeScript no repositório associado) e um pacote mínimo de cenários A/B para análise de sensibilidade.

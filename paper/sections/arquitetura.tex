@@ -1,18 +1,18 @@
 \section{Arquitetura do protótipo e fluxo visual}
 \label{sec:arquitetura}
 
-Do ponto de vista de engenharia de software, o protótipo separa um \textbf{núcleo de simulação} (TypeScript puro, sem dependência de \emph{framework}) de uma camada de interface web. O núcleo concentra tipos (\texttt{types.ts}), PRNG com semente (\texttt{rng.ts}), sinergia (\texttt{synergy.ts}), catálogos de traços e papéis (\texttt{traitsCatalog.ts}, \texttt{rolesCatalog.ts}), modificadores agregados (\texttt{memberModifiers.ts}, \texttt{roleModifiers.ts}), eventos aleatórios de capacidade (\texttt{dailyRandomEvents.ts}), métricas (\texttt{metrics.ts}), um módulo opcional de \emph{outcome} financeiro pedagógico (\texttt{financial.ts}) e o motor diário em \texttt{engine.ts}. A camada de UI (React~19, empacotada com Vite) consome apenas esses contratos: não há lógica de simulação duplicada nos componentes.
+Sob a ótica de engenharia de software, o protótipo separa um \textbf{núcleo de simulação} (TypeScript puro, sem dependência de \emph{framework}) de uma camada de interface web. O núcleo agrupa tipos (\texttt{types.ts}), PRNG com semente (\texttt{rng.ts}), sinergia (\texttt{synergy.ts}), catálogo de papéis (\texttt{rolesCatalog.ts}), modificadores agregados (\texttt{memberModifiers.ts}, \texttt{roleModifiers.ts}), eventos aleatórios de capacidade (\texttt{dailyRandomEvents.ts}), métricas (\texttt{metrics.ts}), um módulo pedagógico opcional de \emph{resultado financeiro} (\texttt{financial.ts}) e o motor diário em \texttt{engine.ts}. A camada de interface (React~19, empacotada com Vite) consome apenas esses contratos: a lógica de simulação não é duplicada em componentes.
 
 \subsection{Pilha tecnológica e organização do repositório}
-O front-end usa \textbf{React~19} com \textbf{TypeScript} (compilação estrita via \texttt{tsc}), empacotamento \textbf{Vite} e gráficos de séries com \textbf{Recharts} (diagrama de fluxo cumulativo a partir dos \texttt{DayLog}). Textos da interface e notas de motor são externalizados em \textbf{i18next} (português, inglês e espanhol, ficheiros JSON em \texttt{src/locales/}). O repositório inclui ainda \texttt{scripts/paperScenarios.ts} e \texttt{scripts/generate-paper-figures.ts}, invocados por \texttt{npm run paper:figures}, que regeneram figuras e trechos \LaTeX{} em \texttt{paper/data/} a partir do mesmo motor usado na aplicação.
+O \emph{front-end} usa \textbf{React~19} com \textbf{TypeScript} (compilação estrita via \texttt{tsc}), empacotamento \textbf{Vite} e \textbf{Recharts} para séries temporais (fluxo cumulativo a partir dos registros \texttt{DayLog}). Textos da interface e notas do motor são externalizados com \textbf{i18next} (JSON em português, inglês e espanhol sob \texttt{src/locales/}). O repositório contém ainda \texttt{scripts/paperScenarios.ts} e \texttt{scripts/generate-paper-figures.ts}, invocados por \texttt{npm run paper:figures}, que regeneram figuras e trechos \LaTeX{} em \texttt{paper/data/} a partir do mesmo motor usado na aplicação.
 
-\subsection{Fluxo de uso na aplicação web}
-A entrada \texttt{App.tsx} mantém duas fases: \textbf{setup} (edição de \texttt{GameConfig}) e \textbf{playing} (configuração congelada por cópia profunda ao iniciar). No setup, \texttt{SetupScreen.tsx} permite editar membros (intervalo de entrega diária, especialidade, qualidade/defeito, sinergia par a par e por cargo), matriz de sinergia, parâmetros globais e backlog (pontos, colaboração, assignees). Há persistência local de \emph{preset} (\texttt{localStorage}), exportação/importação de JSON e cenário padrão por idioma (\texttt{gameDefaults.ts}). A ecrã \textbf{Sobre} (\texttt{AboutScreen.tsx}) expõe ao utilizador as mesmas fórmulas resumidas do modelo (pontos por etapa, capacidade, colaboração), reforçando a transparência pedagógica.
+\subsection{Fluxo da aplicação web}
+A entrada \texttt{App.tsx} mantém duas fases: \textbf{configuração} (edição de \texttt{GameConfig}) e \textbf{jogo} (configuração congelada por cópia profunda ao iniciar). Na configuração, \texttt{SetupScreen.tsx} edita membros (faixa de entrega diária, especialidade, papel opcional, sinergia par a par e por tipo de cargo), a matriz de sinergia, parâmetros globais e o \emph{backlog} (pontos, tipo de tarefa, prazos). Há persistência local de \emph{presets} (\texttt{localStorage}), exportação/importação JSON e cenário padrão por idioma (\texttt{gameDefaults.ts}). A tela \textbf{Sobre} (\texttt{AboutScreen.tsx}) mostra fórmulas condensadas (pontos por etapa, capacidade, colaboração), reforçando a transparência pedagógica.
 
-Na fase de partida, \texttt{PlayScreen.tsx} instancia \texttt{createInteractiveRunner(config)}, que encapsula estado mutável do quadro, registo de dias (\texttt{DayLog}), cartões concluídos e métodos \texttt{step()}, \texttt{advanceUntilAfterRetro()}, além de \texttt{updateCardAssignees(cardId,\,ids)} para alterar responsáveis \emph{em tempo de simulação} (com as mesmas regras do setup: cartão colaborativo exige dois membros distintos; em \texttt{deploy} a edição é recusada). O avanço de dia pode ser bloqueado enquanto existir membro sem qualquer cartão atribuído (\texttt{membersNotAssignedToAnyCard}), forçando alocação explícita antes de consumir capacidade. O quadro \texttt{KanbanBoard.tsx} mostra remanescente por etapa e selectores de assignees; o resumo de cada dia abre-se em modal (\texttt{DaySummaryModal.tsx}) com sorteios, capacidade efetiva e contagens. A exportação JSON da partida inclui configuração, \emph{logs} e estado final.
+No jogo, \texttt{PlayScreen.tsx} instancia \texttt{createInteractiveRunner(config)}, encapsulando estado mutável do quadro, logs diários (\texttt{DayLog}), cartões concluídos e métodos \texttt{step()}, \texttt{advanceUntilAfterRetro()}, além de \texttt{updateCardAssignees(cardId,\,ids)} para alterar donos \emph{durante} a simulação (edições em \texttt{backlog} e \texttt{deploy} são rejeitadas; responsáveis definem-se após o cartão entrar no fluxo). Quando existe cartão fora do \texttt{backlog}, avançar um dia pode ser bloqueado enquanto algum membro não aparecer como responsável em pelo menos um cartão nessas colunas (\texttt{membersNotAssignedToAnyCard} + \texttt{hasAnyCardOutsideBacklog}). \texttt{KanbanBoard.tsx} mostra restantes por etapa e seletores de responsáveis; o resumo de cada dia abre em modal (\texttt{DaySummaryModal.tsx}) com sorteios de dados, capacidade efetiva e contagens. A exportação JSON de uma partida inclui configuração, \emph{logs} e estado final.
 
 \subsection{Visualizações e extensões pedagógicas}
-Além do quadro, a partida apresenta CFD (\texttt{CfdChart.tsx}), resumo de tempos de ciclo (\texttt{CycleTimeSummary.tsx}), catálogo textual dos eventos aleatórios (\texttt{DailyEventsCatalog.tsx}) e um bloco de \textbf{resultado financeiro sintético} (\texttt{FinancialReport.tsx}, \texttt{FinancialCharts.tsx}) derivado de prazos e conclusões --- útil para narrativas de custo/atraso em sala, sem alterar a mecânica do motor principal.
+Além do quadro, a visão da partida exibe um CFD (\texttt{CfdChart.tsx}), resumo de tempo de ciclo (\texttt{CycleTimeSummary.tsx}), catálogo textual de eventos aleatórios (\texttt{DailyEventsCatalog.tsx}) e um bloco de \textbf{resultado financeiro sintético} (\texttt{FinancialReport.tsx}, \texttt{FinancialCharts.tsx}) derivado de prazos e conclusões---útil para narrativas de custo/atraso em sala, sem alterar a mecânica central do motor.
 
 \begin{figure}[htbp]
   \centering
@@ -24,7 +24,7 @@ Além do quadro, a partida apresenta CFD (\texttt{CfdChart.tsx}), resumo de temp
     \node[col] (bl) {Backlog};
     \node[col, right=0.35cm of bl] (an) {Análise};
     \node[col, right=0.35cm of an] (dv) {Dev};
-    \node[col, right=0.35cm of dv] (ts) {Teste};
+    \node[col, right=0.35cm of dv] (ts) {Testes};
     \node[col, right=0.35cm of ts] (dp) {Deploy};
     \draw[arr] (bl) -- (an);
     \draw[arr] (an) -- (dv);
@@ -35,13 +35,13 @@ Além do quadro, a partida apresenta CFD (\texttt{CfdChart.tsx}), resumo de temp
     \draw[dashed, gray] (topL) rectangle ($(dp.south east)+(0.15,-0.35)$);
     \node[note, anchor=south] at ($(topL)!0.5!(topR)$) {Quadro Kanban (colunas de fluxo)};
     \node[note, anchor=north west] at ($(bl.south west)+(-0.1,-0.85)$)
-      {\textbf{Ritmo Scrum (v1):} dia $1$ --- planejamento (puxar do \emph{Backlog} para \emph{Análise});\\
+      {\textbf{Ritmo Scrum (v1):} dia $1$ --- planejamento (puxar de \emph{Backlog} para \emph{Análise});\\
        dias $2,\ldots,D-1$ --- trabalho (\emph{Daily});\\
-       dia $D$ --- trabalho e revisão do sprint (marcador);\\
+       dia $D$ --- trabalho e revisão da sprint (marcador);\\
        dia formal de retrospectiva sem efeito mecânico.};
   \end{tikzpicture}
-  \caption{Fluxo principal de cartões e relação conceitual com o calendário de ritos.}
+  \caption{Fluxo principal dos cartões e ligação conceitual ao calendário de ritos.}
   \label{fig:fluxoQuadro}
 \end{figure}
 
-A Figura~\ref{fig:fluxoQuadro} resume a leitura pedagógica que queremos preservar: o Kanban organiza \emph{o que} está em cada estágio; o Scrum organiza \emph{quando} certas ações de cadência ocorrem. O motor materializa essa combinação ao alternar transições de planejamento e passos de trabalho conforme a Tabela~\ref{tab:ritos}. Para experimentos em lote e o PDF deste artigo, \texttt{runSimulation(config)} permanece o ponto de entrada que percorre todos os dias até esgotar os sprints; a aplicação web privilegia o corredor interativo com o mesmo código de transição de estado.
+A Figura~\ref{fig:fluxoQuadro} resume a leitura pedagógica que queremos preservar: o Kanban organiza \emph{o quê} está em cada etapa; o Scrum organiza \emph{quando} ocorrem ações de cadência. O motor materializa essa combinação alternando transições de planejamento e passos de trabalho conforme a Tabela~\ref{tab:ritos}. Para experimentos em lote e o PDF deste artigo, \texttt{runSimulation(config)} permanece o ponto de entrada que percorre todos os dias até esgotar as sprints; a aplicação web privilegia o \emph{runner} interativo com o mesmo código de transição de estado.

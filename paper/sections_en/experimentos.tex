@@ -1,0 +1,31 @@
+\section{Experimental design}
+\label{sec:experimentos}
+
+\subsection{Objective and operational hypotheses}
+We illustrate \textbf{sensitivity analysis} under a transparent model: we keep fixed the initial backlog, PRNG seed, WIP policy, and global parameters (Table~\ref{tab:param}), varying only (i) synergy on a collaborative pair in \texttt{dev}, (ii) negative synergy on the handoff between the analyst and the lead developer, and (iii) the simultaneous combination of both (scenario~D).
+
+From the viewpoint of Section~\ref{sec:sinergia-neutral-vs}, the package explicitly contrasts the \textbf{no-synergy reading} (scenario~A: null matrix $S$) with \textbf{localized synergy readings} (B: facilitation on the developer pair; C: friction on the analyst--lead handoff; D: both at once).
+
+The associated \emph{operational} hypotheses are modest and \textbf{parameter-dependent}: we expect (H1) positive synergy on the collaborative pair to reduce, on average, cycle time for cards that benefit from higher effective productivity in \texttt{dev}; (H2) negative synergy on the analyst--lead-developer handoff to increase delay via both the handoff multiplier and higher rework probability; (H3) the combination in D to yield a flow profile distinct from isolated B and C, illustrating interaction between the two channels of $S$. Section~\ref{sec:resultados} checks these expectations against automatically generated numbers.
+
+\subsection{Team and backlog}
+We use four members: one analyst, two developers (to allow collaborative cards), and one tester. The backlog has seven cards with heterogeneous point values; two cards are collaborative with assignees on both developers. This composition forces controlled use of the collaboration mechanism in \texttt{dev} without changing total work across scenarios.
+
+\subsection{Scenarios}
+\begin{itemize}
+  \item \textbf{A (baseline):} zero synergies.
+  \item \textbf{B (collaboration):} $s=0.88$ between the two developers; all other synergies zero.
+  \item \textbf{C (handoff):} $s=-0.82$ between analyst and lead developer; all other synergies zero.
+  \item \textbf{D (combined):} $s=0.88$ between the two developers \emph{and} $s=-0.82$ between analyst and lead developer.
+\end{itemize}
+
+\subsection{Fixed numeric parameters}
+\begin{table}[htbp]
+  \centering
+  \caption{Global parameters used in the experiments (generated from code).}
+  \label{tab:param}
+  \input{data/parametros.tex}
+\end{table}
+
+\subsection{Reported metrics and reproducibility}
+For each scenario we record: (i) the daily series of per-column counts (basis for CFD-style plots); (ii) cycle times per completed card (from \texttt{analise} to \texttt{deploy}), with mean and median per scenario; (iii) throughput per sprint, assigning each completion to the sprint of the corresponding global day. The numbers in this article are produced by \texttt{runSimulation} in the same module \texttt{src/simulation/engine.ts} as the web app (only the driver differs: batch \emph{vs.} stepwise). All files under \texttt{paper/data/} and \texttt{paper/figures/} can be regenerated from the same repository commit, reducing drift risk between text and implementation.

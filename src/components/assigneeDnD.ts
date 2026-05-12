@@ -7,8 +7,14 @@ export type AssigneeDragPayload =
 export function parseAssigneeDragPayload(raw: string): AssigneeDragPayload | null {
   try {
     const o = JSON.parse(raw) as AssigneeDragPayload;
-    if (o.source === 'roster' && typeof o.memberId === 'string') return o;
-    if (o.source === 'slot' && typeof o.memberId === 'string' && typeof o.cardId === 'string') {
+    if (o.source === 'roster' && typeof o.memberId === 'string' && o.memberId.length > 0) return o;
+    if (
+      o.source === 'slot' &&
+      typeof o.memberId === 'string' &&
+      o.memberId.length > 0 &&
+      typeof o.cardId === 'string' &&
+      o.cardId.length > 0
+    ) {
       const si = (o as { slotIndex?: unknown }).slotIndex;
       const slotIndex =
         typeof si === 'number' && Number.isFinite(si) ? Math.max(0, Math.floor(si)) : 0;

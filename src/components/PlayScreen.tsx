@@ -1,14 +1,24 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ColumnId, DayLog, GameConfig } from '../simulation/types';
-import { createInteractiveRunner, membersNotAssignedToAnyCard } from '../simulation/engine';
-import { buildWorkFillPulse, snapshotCardWork, type WorkFillPulse } from '../simulation/cardProgress';
+import {
+  createInteractiveRunner,
+  hasAnyCardOutsideBacklog,
+  membersAssignedToMultipleWorkCards,
+  membersNotAssignedToAnyCard,
+} from '../simulation/engine';
+import {
+  buildWorkFillPulse,
+  snapshotCardWork,
+  workFillPulseDisplayMs,
+  type WorkFillPulse,
+} from '../simulation/cardProgress';
 import { buildCfdSeries } from '../simulation/metrics';
 import { buildFinancialSummary } from '../simulation/financial';
 import { formatLogNote } from '../i18n/formatLogNote';
 import { KanbanBoard } from './KanbanBoard';
 import { DaySummaryModal } from './DaySummaryModal';
-import { DailyEventsCatalog } from './DailyEventsCatalog';
+import { DailyEventsCatalogModal } from './DailyEventsCatalogModal';
 import { PlayChartsModal } from './PlayChartsModal';
 
 type Props = {
@@ -24,14 +34,17 @@ export function PlayScreen({ config, onBackToSetup }: Props) {
   const [assigneeError, setAssigneeError] = useState<string | null>(null);
   const [moveError, setMoveError] = useState<string | null>(null);
   const [workFillPulse, setWorkFillPulse] = useState<WorkFillPulse | null>(null);
+  const workAnimTimersRef = useRef<number[]>([]);
   const [chartsOpen, setChartsOpen] = useState(false);
+  const [dailyEventsOpen, setDailyEventsOpen] = useState(false);
   const refresh = useCallback(() => setTick((n) => n + 1), []);
 
-  useEffect(() => {
-    if (!workFillPulse) return;
-    const t = window.setTimeout(() => setWorkFillPulse(null), 920);
-    return () => clearTimeout(t);
-  }, [workFillPulse]);
+  const clearWorkAnimTimers = useCallback(() => {
+    for (const id of workAnimTimersRef.current) window.clearTimeout(id);
+    workAnimTimersRef.current = [];
+  }, []);
+
+  useEffect(() => () => clearWorkAnimTimers(), [clearWorkAnimTimers]);
 
   const logs = runner.getLogs();
   const board = runner.getBoard();
@@ -48,8 +61,30 @@ export function PlayScreen({ config, onBackToSetup }: Props) {
     () => membersNotAssignedToAnyCard(board, config.members),
     [board, config.members],
   );
+  const membersOverbooked = useMemo(
+    () => membersAssignedToMultipleWorkCards(board, config.members),
+    [board, config.members],
+  );
+  const unassignedActiveCardTitles = useMemo(() => {
+    const out: string[] = [];
+    const activeCols: ColumnId[] = ['analise', 'dev', 'teste'];
+    for (const col of activeCols) {
+      for (const id of board.columns[col]) {
+        const c = board.cardsById[id];
+        if (c && c.assigneeIds.length === 0) out.push(c.title);
+      }
+    }
+    return out;
+  }, [board]);
+  const enforceAllocationRules = !config.params.clearAssigneesAfterEachDay;
   const blockAdvanceByAllocation =
-    config.members.length > 0 && membersMissingFromCards.length > 0;
+    enforceAllocationRules &&
+    config.members.length > 0 &&
+    hasAnyCardOutsideBacklog(board) &&
+    membersMissingFromCards.length > 0;
+  const blockAdvanceByOverbook = enforceAllocationRules && membersOverbooked.length > 0;
+  const blockAdvance = blockAdvanceByAllocation || blockAdvanceByOverbook;
+  const showUnassignedBanner = !blockAdvance && unassignedActiveCardTitles.length > 0;
 
   const handleUpdateAssignees = useCallback(
     (cardId: string, assigneeIds: string[]) => {
@@ -84,34 +119,65 @@ export function PlayScreen({ config, onBackToSetup }: Props) {
   );
 
   const guardAllocationOrAlert = (): boolean => {
-    const missing = membersNotAssignedToAnyCard(runner.getBoard(), config.members);
-    if (config.members.length === 0 || missing.length === 0) return true;
-    window.alert(
-      t('play.allocationBlocked', {
-        names: missing.map((m) => m.name).join(', '),
-      }),
-    );
-    return false;
+    if (!enforceAllocationRules) return true;
+    const b = runner.getBoard();
+    if (config.members.length === 0 || !hasAnyCardOutsideBacklog(b)) return true;
+    const missing = membersNotAssignedToAnyCard(b, config.members);
+    if (missing.length > 0) {
+      window.alert(
+        t('play.allocationBlocked', {
+          names: missing.map((m) => m.name).join(', '),
+        }),
+      );
+      return false;
+    }
+    const overbooked = membersAssignedToMultipleWorkCards(b, config.members);
+    if (overbooked.length > 0) {
+      window.alert(
+        t('play.overbookedBlocked', {
+          names: overbooked.map((m) => m.name).join(', '),
+        }),
+      );
+      return false;
+    }
+    return true;
   };
 
   const advanceOne = () => {
     setAssigneeError(null);
     setMoveError(null);
     if (!guardAllocationOrAlert()) return;
+    clearWorkAnimTimers();
     const before = snapshotCardWork(runner.getBoard());
-    const log = runner.step();
+    const isFirstAdvance = runner.getLogs().length === 0;
+    let log = runner.step();
+    // UX: no primeiro clique, já executa o primeiro dia útil após o Planning.
+    if (isFirstAdvance && log?.ceremony === 'sprint_planning') {
+      if (guardAllocationOrAlert()) {
+        const next = runner.step();
+        if (next) log = next;
+      }
+    }
     refresh();
+    const boardAfter = runner.getBoard();
+
     if (log && (log.ceremony === 'daily_scrum' || log.ceremony === 'sprint_review')) {
-      setWorkFillPulse(buildWorkFillPulse(before, runner.getBoard()));
+      const pulse = buildWorkFillPulse(before, boardAfter);
+      setWorkFillPulse(pulse);
+      const dwellMs = workFillPulseDisplayMs(pulse, boardAfter) + 220;
+      const tid = window.setTimeout(() => {
+        setWorkFillPulse(null);
+      }, dwellMs);
+      workAnimTimersRef.current.push(tid);
     } else {
       setWorkFillPulse(null);
     }
-    if (log) setDayModalLog(log);
   };
 
   const advanceSprint = () => {
     setAssigneeError(null);
     setMoveError(null);
+    clearWorkAnimTimers();
     setWorkFillPulse(null);
     if (!guardAllocationOrAlert()) return;
     runner.advanceUntilAfterRetro();
@@ -122,6 +188,7 @@ export function PlayScreen({ config, onBackToSetup }: Props) {
   const runAll = () => {
     setAssigneeError(null);
     setMoveError(null);
+    clearWorkAnimTimers();
     setWorkFillPulse(null);
     if (!guardAllocationOrAlert()) return;
     const r = createInteractiveRunner(config);
@@ -136,6 +203,7 @@ export function PlayScreen({ config, onBackToSetup }: Props) {
   const resetMatch = () => {
     setAssigneeError(null);
     setMoveError(null);
+    clearWorkAnimTimers();
     setWorkFillPulse(null);
     setRunner(createInteractiveRunner(config));
     setDayModalLog(null);
@@ -148,6 +216,7 @@ export function PlayScreen({ config, onBackToSetup }: Props) {
         <DaySummaryModal
           log={dayModalLog}
           members={config.members}
+          cardsById={board.cardsById}
           onClose={() => setDayModalLog(null)}
         />
       )}
@@ -161,6 +230,7 @@ export function PlayScreen({ config, onBackToSetup }: Props) {
           lastGlobalDay={lastGlobalDay}
         />
       )}
+      {dailyEventsOpen && <DailyEventsCatalogModal onClose={() => setDailyEventsOpen(false)} />}
       <header className="play-header">
         <div>
           <h1>{t('play.title')}</h1>
@@ -175,6 +245,9 @@ export function PlayScreen({ config, onBackToSetup }: Props) {
         <div className="play-header-actions">
           <button type="button" className="btn secondary" onClick={() => setChartsOpen(true)}>
             {t('play.chartsButton')}
+          </button>
+          <button type="button" className="btn secondary" onClick={() => setDailyEventsOpen(true)}>
+            {t('play.dailyEventsCatalogButton')}
           </button>
           <button
             type="button"
@@ -233,12 +306,16 @@ export function PlayScreen({ config, onBackToSetup }: Props) {
         <button
           type="button"
           className="btn primary"
-          disabled={blockAdvanceByAllocation}
+          disabled={blockAdvance}
           title={
             blockAdvanceByAllocation
               ? t('play.allocationBlocked', {
                   names: membersMissingFromCards.map((m) => m.name).join(', '),
                 })
+              : blockAdvanceByOverbook
+                ? t('play.overbookedBlocked', {
+                    names: membersOverbooked.map((m) => m.name).join(', '),
+                  })
               : undefined
           }
           onClick={advanceOne}
@@ -248,12 +325,26 @@ export function PlayScreen({ config, onBackToSetup }: Props) {
         <button
           type="button"
           className="btn secondary"
-          disabled={blockAdvanceByAllocation}
+          disabled={!lastLog}
+          onClick={() => {
+            if (lastLog) setDayModalLog(lastLog);
+          }}
+        >
+          {t('play.dayDetails')}
+        </button>
+        <button
+          type="button"
+          className="btn secondary"
+          disabled={blockAdvance}
           title={
             blockAdvanceByAllocation
               ? t('play.allocationBlocked', {
                   names: membersMissingFromCards.map((m) => m.name).join(', '),
                 })
+              : blockAdvanceByOverbook
+                ? t('play.overbookedBlocked', {
+                    names: membersOverbooked.map((m) => m.name).join(', '),
+                  })
               : undefined
           }
           onClick={advanceSprint}
@@ -263,12 +354,16 @@ export function PlayScreen({ config, onBackToSetup }: Props) {
         <button
           type="button"
           className="btn secondary"
-          disabled={blockAdvanceByAllocation}
+          disabled={blockAdvance}
           title={
             blockAdvanceByAllocation
               ? t('play.allocationBlocked', {
                   names: membersMissingFromCards.map((m) => m.name).join(', '),
                 })
+              : blockAdvanceByOverbook
+                ? t('play.overbookedBlocked', {
+                    names: membersOverbooked.map((m) => m.name).join(', '),
+                  })
               : undefined
           }
           onClick={runAll}
@@ -277,12 +372,28 @@ export function PlayScreen({ config, onBackToSetup }: Props) {
         </button>
       </div>
 
-      <DailyEventsCatalog />
-
       <div className="play-grid play-grid-main-only">
         <div className="play-main">
-          <p className="muted kanban-assignees-hint">{t('play.kanbanAssigneesHint')}</p>
           <p className="muted small kanban-drag-card-hint">{t('play.kanbanDragCardsHint')}</p>
+          <div className="stage-color-legend" aria-label={t('play.stageColorLegendTitle')}>
+            <span className="stage-color-legend-title">{t('play.stageColorLegendTitle')}</span>
+            <span className="stage-color-legend-item">
+              <span className="stage-color-dot stage-color-dot--analysis" aria-hidden />
+              {t('play.stageColorAnalysis')}
+            </span>
+            <span className="stage-color-legend-item">
+              <span className="stage-color-dot stage-color-dot--dev" aria-hidden />
+              {t('play.stageColorDev')}
+            </span>
+            <span className="stage-color-legend-item">
+              <span className="stage-color-dot stage-color-dot--test" aria-hidden />
+              {t('play.stageColorTest')}
+            </span>
+            <span className="stage-color-legend-item">
+              <span className="stage-color-dot stage-color-dot--deploy" aria-hidden />
+              {t('play.stageColorDeploy')}
+            </span>
+          </div>
           {blockAdvanceByAllocation && (
             <div className="assignee-error-banner" role="alert">
               {t('play.allocationBlocked', {
@@ -292,6 +403,22 @@ export function PlayScreen({ config, onBackToSetup }: Props) {
                 {' '}
                 {t('play.allocationBlockedHint')}
               </span>
+            </div>
+          )}
+          {blockAdvanceByOverbook && (
+            <div className="assignee-error-banner" role="alert">
+              {t('play.overbookedBlocked', {
+                names: membersOverbooked.map((m) => m.name).join(', '),
+              })}
+              <span className="allocation-banner-hint"> {t('play.overbookedBlockedHint')}</span>
+            </div>
+          )}
+          {showUnassignedBanner && (
+            <div className="assignee-error-banner assignee-warning-banner" role="status">
+              {t('play.unassignedActiveCards', {
+                titles: unassignedActiveCardTitles.join(', '),
+              })}
+              <span className="allocation-banner-hint"> {t('play.unassignedActiveCardsHint')}</span>
             </div>
           )}
           {assigneeError && (
@@ -311,6 +438,9 @@ export function PlayScreen({ config, onBackToSetup }: Props) {
             board={board}
             members={config.members}
             params={config.params}
+            synergyByPair={config.synergyByPair}
+            synergyPairBidirectional={config.synergyPairBidirectional}
+            synergyDirected={config.synergyDirected}
             onUpdateAssignees={handleUpdateAssignees}
             onManualMoveCard={handleManualMoveCard}
             workFillPulse={workFillPulse}

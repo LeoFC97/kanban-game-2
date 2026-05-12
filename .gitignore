@@ -23,3 +23,20 @@ dist-ssr
 *.sln
 *.sw?
 .vercel
+
+# Claude Code local agent data
+.claude/
+
+# LaTeX / paper build artifacts
+paper-overleaf*.zip
+paper/overleaf-ptBR/
+paper/sbpo2026*.pdf
+paper/*.aux
+paper/*.log
+paper/*.fls
+paper/*.fdb_latexmk
+paper/*.bbl
+paper/*.blg
+paper/*.out
+paper/*.toc
+paper/*.synctex.gz

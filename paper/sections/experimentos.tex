@@ -2,19 +2,21 @@
 \label{sec:experimentos}
 
 \subsection{Objetivo e hipóteses operacionais}
-Ilustrar \textbf{análise de sensibilidade} sob um modelo transparente: mantemos fixos o backlog inicial, a semente do PRNG, a política de WIP e os parâmetros globais (Tabela~\ref{tab:param}), variando apenas (i) sinergia em um par colaborativo em \texttt{dev}, (ii) sinergia negativa no handoff entre analista e desenvolvedor principal, e (iii) um defeito individual (\emph{Hiperfoco}) no desenvolvedor principal.
+Ilustramos \textbf{análise de sensibilidade} sob um modelo transparente: mantemos fixos o \emph{backlog} inicial, a semente do PRNG, a política de WIP e os parâmetros globais (Tabela~\ref{tab:param}), variando apenas (i) a sinergia num par colaborativo em \texttt{dev}, (ii) a sinergia negativa no repasse entre analista e desenvolvedor líder, e (iii) a combinação simultânea de ambos (cenário~D).
 
-As hipóteses \emph{operacionais} associadas a este desenho são modestas e \textbf{dependentes dos parâmetros}: esperamos que (H1) sinergia positiva no par colaborativo reduza, em média, o tempo de ciclo dos cartões que se beneficiam de maior produtividade efetiva em \texttt{dev}; (H2) sinergia negativa no handoff da analista para o desenvolvedor principal aumente atrasos via combinação de multiplicador de handoff e maior probabilidade de retrabalho; (H3) o defeito \emph{Hiperfoco} reduza throughput médio ao restringir o suporte do dado diário, com impacto variável na média de ciclo conforme a realização estocástica e a contenção do sistema. A Seção~\ref{sec:resultados} confronta essas expectativas com números gerados automaticamente.
+Do ponto de vista da Seção~\ref{sec:sinergia-neutral-vs}, o pacote contrasta de forma explícita a \textbf{visão sem sinergias} (cenário~A: matriz $S$ nula) com \textbf{visões com sinergias localizadas} (B: facilitação no par de desenvolvimento; C: atrito no repasse analista--líder; D: os dois efeitos ao mesmo tempo).
 
-\subsection{Equipe e backlog}
-Utilizamos quatro membros: uma analista, dois desenvolvedores (para permitir cartões colaborativos) e um testador. O backlog possui sete cartões com pontuações heterogêneas; dois cartões são colaborativos com assignees nos dois desenvolvedores. Essa composição força, de forma controlada, o uso do mecanismo de colaboração em \texttt{dev} sem alterar o tamanho total do trabalho entre cenários.
+As hipóteses \emph{operacionais} associadas são modestas e \textbf{dependentes de parâmetros}: esperamos (H1) que sinergia positiva no par colaborativo reduza, em média, o tempo de ciclo dos cartões que se beneficiam de maior produtividade efetiva em \texttt{dev}; (H2) que sinergia negativa no repasse analista--desenvolvedor líder aumente o atraso via multiplicador de repasse e maior propensão a retrabalho; (H3) que a combinação em D produza um perfil de fluxo distinto de B e C isolados, ilustrando interação entre os dois canais de $S$. A Seção~\ref{sec:resultados} confronta essas expectativas com números gerados automaticamente.
+
+\subsection{Equipe e \emph{backlog}}
+Usamos quatro membros: uma analista, dois desenvolvedores (para permitir cartões colaborativos) e um testador. O \emph{backlog} tem sete cartões com valores de pontos heterogêneos; dois cartões são colaborativos com responsáveis nos dois desenvolvedores. Essa composição força uso controlado do mecanismo de colaboração em \texttt{dev} sem alterar o trabalho total entre cenários.
 
 \subsection{Cenários}
 \begin{itemize}
-  \item \textbf{A (linha de base):} sinergias nulas e sem traços.
+  \item \textbf{A (referência):} sinergias nulas.
   \item \textbf{B (colaboração):} $s=0{,}88$ entre os dois desenvolvedores; demais sinergias nulas.
-  \item \textbf{C (handoff):} $s=-0{,}82$ entre analista e desenvolvedor principal; demais sinergias nulas.
-  \item \textbf{D (traço):} como A, porém o desenvolvedor principal recebe o defeito \emph{Hiperfoco}.
+  \item \textbf{C (repasse):} $s=-0{,}82$ entre analista e desenvolvedor líder; demais sinergias nulas.
+  \item \textbf{D (combinado):} $s=0{,}88$ entre os dois desenvolvedores \emph{e} $s=-0{,}82$ entre analista e desenvolvedor líder.
 \end{itemize}
 
 \subsection{Parâmetros numéricos fixos}
@@ -25,5 +27,5 @@ Utilizamos quatro membros: uma analista, dois desenvolvedores (para permitir car
   \input{data/parametros.tex}
 \end{table}
 
-\subsection{Métricas reportadas e reprodutibilidade}
-Para cada cenário, registramos: (i) série diária de contagens por coluna (base para visualizações estilo CFD); (ii) tempos de ciclo por cartão concluído (de \texttt{analise} a \texttt{deploy}), com média e mediana por cenário; (iii) throughput por sprint, atribuindo cada conclusão ao sprint do dia global correspondente. Os números deste artigo são produzidos por \texttt{runSimulation} no mesmo módulo \texttt{src/simulation/engine.ts} usado pela aplicação web (diferindo apenas no modo de acionamento: lote \emph{vs.} passo a passo). Todos os arquivos em \texttt{paper/data/} e \texttt{paper/figures/} podem ser regenerados a partir do mesmo commit do código, o que reduz risco de descompasso entre texto e implementação.
+\subsection{Métricas relatadas e reprodutibilidade}
+Para cada cenário registramos: (i) a série diária de contagens por coluna (base para gráficos estilo CFD); (ii) tempos de ciclo por cartão concluído (de \texttt{analise} a \texttt{deploy}), com média e mediana por cenário; (iii) \emph{throughput} por sprint, atribuindo cada conclusão à sprint do dia global correspondente. Os números deste artigo são produzidos por \texttt{runSimulation} no mesmo módulo \texttt{src/simulation/engine.ts} da aplicação web (só difere o condutor: lote \emph{vs.} passo a passo). Todos os ficheiros em \texttt{paper/data/} e \texttt{paper/figures/} podem ser regenerados a partir do mesmo \emph{commit} do repositório, reduzindo o risco de deriva entre texto e implementação.

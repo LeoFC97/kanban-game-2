@@ -10,9 +10,14 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "preview": "vite preview",
     "paper:figures": "tsx --tsconfig tsconfig.paper.json scripts/generate-paper-figures.ts",
-    "paper:pdf": "make -C paper pdf"
+    "paper:pdf": "make -C paper pdf",
+    "paper:pdf:pt": "make -C paper pdf-pt",
+    "paper:pdf:en": "make -C paper pdf-en",
+    "paper:pdf:all": "make -C paper pdf-all"
   },
   "dependencies": {
     "i18next": "^26.0.4",
@@ -34,6 +39,7 @@
     "tsx": "^4.21.0",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.58.0",
-    "vite": "^8.0.4"
+    "vite": "^8.0.4",
+    "vitest": "^3.2.4"
   }
 }

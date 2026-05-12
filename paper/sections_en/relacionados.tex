@@ -1,0 +1,43 @@
+\section{Related work}
+\label{sec:relacionados}
+
+\paragraph{Simulation and flow in software development.}
+Discrete-event simulation and queueing theory apply naturally to knowledge work~\cite{banks2010discrete}, although parameter estimation and validation remain well-known challenges. In software engineering, metrics such as throughput, cycle time, and cumulative flow diagrams (CFDs) have become common language in lean/Kanban initiatives~\cite{anderson2010kanban}. Card-and-column pedagogical models help illustrate WIP and variability, often with a stochastic component in daily capacity.
+
+\paragraph{Simulators and serious games.}
+The \emph{Kanban Simulator}~\cite{kanbanSimulator} popularized per-member dice dynamics and specialist bonuses in the matching column, together with flow metrics. From an OR perspective, such tools are valuable for \emph{intuition} but do not always expose all rules needed for strict academic replication. In parallel, \emph{serious games} and software labs have been used to teach queueing policies and bottleneck effects; our focus is complementary: a declarative, versioned, inspectable engine.
+
+\paragraph{Human factors and teams.}
+Organizational psychology and software-engineering studies discuss cohesion, trust, and conflict. Our framing does not replace psychometric instruments: the synergy $s_{ij}\in[-1,1]$ is an explicit model \textbf{parameter}, interpretable as an operational summary of facilitation or friction between peers \emph{under the simulator's rules}, coupled to the same mechanical flow and capacity core.
+
+\subsection{Comparison with nearby flow simulators and games}
+Table~\ref{tab:comparacaoSoftware} positions the proposal against three common families in teaching and consulting: a widely used \emph{web} simulator~\cite{kanbanSimulator}, a reference Kanban board game~\cite{getkanban}, and generic agile labs or serious games (spreadsheets, digital sticky notes, process hackathons). Judgments are qualitative: ``Yes'' means explicit support in the tool's typical design; ``Partial'' means limited existence, facilitator-dependent, or not formalized in equations; ``No'' means typically absent or not applicable.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Qualitative comparison of nearby approaches and the proposal (engine + web app + article artifacts).}
+  \label{tab:comparacaoSoftware}
+  \small
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{@{}>{\raggedright\arraybackslash}p{3.15cm}>{\centering\arraybackslash}p{2.35cm}>{\centering\arraybackslash}p{2.35cm}>{\centering\arraybackslash}p{2.35cm}>{\centering\arraybackslash}p{2.85cm}@{}}
+    \toprule
+    Criterion & Kanban Simulator\newline\cite{kanbanSimulator} & getKanban\newline\cite{getkanban} & Generic serious games\newline/labs & This proposal \\
+    \midrule
+    Typical medium & Commercial web app & Physical / facilitated game & Course, sheet, mash-up & Web OSS + \LaTeX{} \\
+    Rules formalizable in academic text & Partial & Partial (manual/cards) & Partial / ad hoc & Yes \\
+    Open, versioned source code & No & No & Occasional & Yes \\
+    Reproducibility (seed, exportable config) & Limited & Low & Variable & Yes \\
+    Pairwise synergy $s_{ij}$ in the engine & No & No & Rare & Yes \\
+    Individual traits with tracked numeric effects & No / very light & Narrative events & Rare & No \\
+    Handoff + rework with OR parameters & Simplified & Table decisions & Variable & Yes \\
+    Scrum calendar overlaid on flow & Partial & Yes (pedagogical) & Variable & Yes (v1) \\
+    CFD / cycle time in the UI & Yes & Manual & Variable & Yes \\
+    Figures/tables generated from the engine (article) & No & No & No & Yes \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The table is not meant to devalue commercial simulators or board games, which remain excellent for \emph{engagement} and group dynamics. The gap we address is different: to \textbf{declare} a minimal set of equations and parameters, to \textbf{execute} them in the same codebase that produces the PDF numbers, and to \textbf{enable} A/B contrasts without implementation ambiguity. Future rows could include other open-source academic simulators for defect queues or release planning, provided stable references exist.
+
+\paragraph{Synthesis.}
+Unlike purely narrative approaches or black boxes, the framework described here prioritizes algorithmic transparency (TypeScript implementation in the associated repository) and a minimal A/B scenario package for sensitivity analysis.

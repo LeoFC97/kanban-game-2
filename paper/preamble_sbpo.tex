@@ -1,9 +1,11 @@
-% Pacotes e ajustes comuns (SBPO 2026 ST — margens, Times 11, PT-BR).
+% Common preamble (SBPO 2026 ST layout — margins, Times 11). Babel language from \SBPOBabelOptions in the driver .tex file.
 \usepackage[a4paper,top=3.3cm,bottom=2.5cm,left=2.9cm,right=2.9cm]{geometry}
 \usepackage{mathptmx}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
-\usepackage[brazil]{babel}
+% Idioma definido no driver (\newcommand{\SBPOBabelOptions}{brazil|english} antes de \input{preamble_sbpo}).
+\providecommand{\SBPOBabelOptions}{brazil}
+\usepackage[\SBPOBabelOptions]{babel}
 \usepackage{microtype}
 \usepackage{amsmath,amssymb}
 \usepackage{array}
@@ -23,7 +25,7 @@
 
 \hypersetup{colorlinks=true,linkcolor=black,citecolor=black,urlcolor=blue}
 
-% Limite SBPO 2026 (ST): 12 páginas no PDF final (texto + figuras + referências).
+% SBPO 2026 (ST): 12-page cap on the final PDF (body + figures + references).
 \newcount\sbpoMaxPages
 \sbpoMaxPages=12
 \newif\ifsbpoLimitPages
@@ -32,8 +34,8 @@
   \ifsbpoLimitPages
     \ifnum\value{page}>\sbpoMaxPages\relax
       \PackageWarning{sbpo2026}{%
-        Limite de paginas SBPO ST: este PDF tem \arabic{page} pagina(s) (maximo \the\sbpoMaxPages).%
-        \MessageBreak Reduza texto, equacoes, figuras/tabelas ou bibliografia; recompile e verifique o log.%
+        SBPO ST page limit: this PDF has \arabic{page} page(s) (maximum \the\sbpoMaxPages).%
+        \MessageBreak Shorten text, equations, figures/tables, or references; recompile and check the log.%
       }%
     \fi
   \fi

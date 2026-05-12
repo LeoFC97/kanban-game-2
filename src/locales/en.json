@@ -50,13 +50,11 @@
   },
   "setup": {
     "title": "Match setup",
-    "lede": "Build the team, traits, synergy matrix, and backlog. When you start, the configuration is frozen until you return to setup.",
+    "lede": "Build the team, synergy matrix, and backlog. When you start, the configuration is frozen until you return to setup.",
     "team": "Team",
     "addMember": "+ Member",
     "memberNamePlaceholder": "Name",
-    "quality": "Strength",
-    "flaw": "Weakness",
-    "traitNone": "—",
+    "jobRoleNone": "—",
     "remove": "Remove",
     "synergyTitle": "Synergy (pairwise)",
     "backlogTitle": "Initial backlog",
@@ -119,12 +117,12 @@
     "tableBusinessValue": "Value ($)",
     "tableDueGlobalDay": "Due (global day)",
     "tableDueGlobalDayHint": "Inclusive global day: deploy on or before this day avoids late penalty. Empty = no deadline.",
-    "assigneeDragIntro": "Assignees are not set on this screen. During the match, drag team members onto each card on the board (every member must appear on at least one card before you can advance the day).",
+    "assigneeDragIntro": "Assignees are not set on this screen. During the match, drag team members onto cards that have left the Backlog (you cannot assign people while a card is still in Backlog); once any cards are in Analysis or later, every member must appear on at least one such card before you can advance the day.",
     "tableAssignees": "Assignees",
     "assigneeOptional": "Additional assignees (optional)",
     "paramsTitle": "Simulation parameters",
     "hypothesisTitle": "Hypothesis / rules",
-    "hypothesisBody": "Each member sets a daily delivery range (min–max); each working day an integer is drawn uniformly from that range. Only then multipliers apply: specialty column (~×2 + traits), then global job-role bonuses (e.g. Tech Lead). With no range set, the legacy 1…dice max applies (max affected by traits). On Dev, cards with several assignees use average pairwise synergy and each assignee’s collaboration traits. Handoffs use γ and traits; low synergy raises rework; Scrum Master reduces handoff rework for everyone. On Daily and Sprint Review days, a random event may fire (sickness, vacation, etc.) according to the configured probability — see the list during the match. Each task can carry business value and a deadline (global day); at the end of the match the financial report sums net value with penalties for late or missed delivery.",
+    "hypothesisBody": "Each member sets a daily delivery range (min–max); each working day an integer is drawn uniformly from that range. Only then multipliers apply: specialty column (~×2), then global job-role bonuses (e.g. Tech Lead). With no range set, the legacy 1…6 dice max applies. On Dev, cards with several assignees use average pairwise synergy between assignees. Handoffs use γ and pairwise synergy; low synergy raises rework; Scrum Master reduces handoff rework for everyone. On Daily and Sprint Review days, a random event may fire (sickness, vacation, etc.) according to the configured probability — see the list during the match. Each task can carry business value and a deadline (global day); at the end of the match the financial report sums net value with penalties for late or missed delivery.",
     "deliveryRange": "Daily delivery (min — max)",
     "deliveryHint": "Uniform draw per day in this range; specialist and job-role multipliers apply afterward (engine caps daily effective capacity).",
     "jobRole": "Job role (optional)",
@@ -167,7 +165,8 @@
   "errors": {
     "atLeastOneMember": "Add at least one member.",
     "assigneesMustBeDistinct": "Card \"{{title}}\" cannot include the same person twice among assignees.",
-    "cardOneAssignee": "Card \"{{title}}\" needs at least one assignee."
+    "cardOneAssignee": "Card \"{{title}}\" needs at least one assignee.",
+    "memberSingleActiveCard": "{{name}} is already assigned to card \"{{cardTitle}}\" in active work. Each person can be on only one card at a time."
   },
   "synergy": {
     "needTwoMembers": "Add at least two members to edit synergy.",
@@ -182,8 +181,6 @@
     "pts": "pts",
     "remaining": "remaining",
     "collabShort": "collab",
-    "financialValue": "value {{v}}",
-    "financeDollar": "${{v}}",
     "stageUnitsShort": "A{{a}} · D{{d}} · T{{te}}",
     "financialDue": "due day {{day}}",
     "idleTitle": "Idle (no card in flow)",
@@ -191,12 +188,30 @@
     "dragCardHint": "Drag the ⋮⋮ handle on each card to change column.",
     "dragHandleTitle": "Drag card",
     "wipCount": "{{n}}/{{wip}}",
-    "assigneePoolLabel": "Team (drag onto a card)",
-    "assigneePoolSublabel": "Drop an assignee chip here to remove them from the card.",
+    "assigneePoolLabel": "Team — drag these names",
+    "assigneePoolSublabel": "To remove someone from a card, drag their chip back into this dashed box.",
+    "assigneePoolEmpty": "No one available here — everyone is already on active cards.",
+    "assigneeHowTitle": "How to put people on cards",
+    "assigneeHowStep1": "Click and hold a name in the Team box below, then drag.",
+    "assigneeHowStep2": "Drop onto the dashed boxes under “Assignees” on a card (or “+ add”). You can put several people on the same card.",
+    "assigneeHowStep3": "Backlog and Deploy are read-only for assignees here — set the team when the card is in Analysis, Development, or Testing.",
     "assigneeSlot1": "1st person",
     "assigneeSlot2": "2nd person (optional)",
     "assigneeSlotAdd": "+ add",
-    "dragAssigneeOff": "Drag to Team area to remove"
+    "assigneeSlotDropHere": "Drop here",
+    "dragAssigneeOff": "Drag to Team area to remove",
+    "tooltip": {
+      "title": "{{name}} — estimated daily range on this card",
+      "base": "B ~ U({{min}}, {{max}})",
+      "specialist": "Specialist ({{col}}) ×{{mult}}",
+      "specialistNoWork": "(no work in that column -> ×1)",
+      "roles": "Global roles ×{{mult}}",
+      "randomEvent": "Random event ×[{{min}}, {{max}}]",
+      "synergyDevWithS": "Dev synergy: s̄={{s}} -> ×{{mult}}",
+      "synergyDev": "Dev synergy: ×{{mult}}",
+      "range": "Estimated delivery on this card: [{{min}}, {{max}}] pts/day",
+      "stageCap": "Cap by stage remaining: {{cap}} pts"
+    }
   },
   "cfd": {
     "title": "Cumulative Flow Diagram (CFD)",
@@ -263,34 +278,49 @@
     "chartsButton": "Charts",
     "chartsModalTitle": "CFD & finances",
     "chartsModalClose": "Close",
+    "dailyEventsCatalogButton": "Random events (reference)",
+    "dailyEventsModalClose": "Close",
     "resetMatch": "Reset match",
     "backToSetup": "Back to setup",
     "globalDay": "Global day {{day}}",
     "sprintBadge": "Sprint {{n}}",
     "dayBadge": "Day {{n}}",
     "calendarHint": "Advance one day to start the calendar.",
-    "kanbanAssigneesHint": "Assignees: drag from Team onto a card slot or the \"+ add\" slot; drag a chip back to Team to remove. Add as many assignees as you need. Read-only in Deploy.",
+    "kanbanAssigneesHint": "Assignees: drag from Team onto a card slot or the \"+ add\" slot; drag a chip back to Team to remove. Add as many assignees as you need. Read-only in Backlog and Deploy.",
     "kanbanDragCardsHint": "Cards: drag ⋮⋮ forward only — Backlog → Analysis → Development → Testing → Deploy. In Analysis, Development, and Testing you may move to the next column only when stage remaining is zero; WIP limits apply.",
+    "stageColorLegendTitle": "Color legend:",
+    "stageColorAnalysis": "Red = Analysis",
+    "stageColorDev": "Blue = Development",
+    "stageColorTest": "Green = Testing",
+    "stageColorDeploy": "Yellow = Deploy",
     "manualMoveWipFull": "Cannot add more cards to \"{{col}}\": WIP limit is {{wip}}.",
     "manualMoveStageIncomplete": "Finish the work in this stage (remaining down to zero) before dragging the card to the next column.",
     "manualMoveNotAllowed": "That column move is not allowed (forward flow only).",
     "manualMoveFromDeploy": "Cards in Deploy cannot be moved.",
     "manualMoveUnknownCard": "Card not found.",
     "dismissMoveError": "Dismiss",
+    "assigneeReadOnlyBacklog": "You cannot assign owners to \"{{title}}\" in the Backlog — move the card to Analysis (or later) and set the team there.",
     "assigneeReadOnlyDeploy": "Cannot change assignees in Deploy for \"{{title}}\".",
     "assigneeUnknownCard": "Card not found on the board.",
-    "allocationBlocked": "Cannot advance the day: these members are not on any board card: {{names}}.",
-    "allocationBlockedHint": "Assign each person to at least one card (in any column) before continuing.",
+    "allocationBlocked": "Cannot advance the day: these members are not assignees on any card outside the Backlog: {{names}}.",
+    "allocationBlockedHint": "Assign each person to at least one card that has left the Backlog (Analysis, Dev, Test, or Deploy) before continuing.",
+    "overbookedBlocked": "Cannot advance: these members are assigned to more than one active card (Analysis/Dev/Testing): {{names}}.",
+    "overbookedBlockedHint": "Remove each person from extra cards so every member is on only one active card at a time.",
+    "unassignedActiveCards": "Cards in active columns without any assignee receive no capacity today: {{titles}}.",
+    "unassignedActiveCardsHint": "Drag people onto cards in Analysis, Dev or Test before advancing the day.",
     "advanceOneDay": "Advance 1 day",
     "advanceSprint": "Advance until after Retrospective",
     "runAll": "Simulate all sprints",
+    "dayDetails": "Day details",
     "lastDayEvents": "Latest day events",
+    "workAnimPull": "Day pull: total progress +{{delivered}} points",
+    "workAnimMember": "{{name}} delivers {{delivered}} points in this step (effective capacity: {{cap}}).",
     "dayModal": {
       "title": "Day summary",
       "close": "Close",
       "randomEvents": "Today's events",
       "capacityTitle": "Delivery roll & effective capacity",
-      "capacityMultFootnote": "Multiplier order: base draw → specialty-column multiplier (~×2 + traits) → global job roles (e.g. Tech Lead) → daily random event (if it changes capacity). \"Δ vs roll\" is effective capacity minus the base roll.",
+      "capacityMultFootnote": "Multiplier order: base draw → specialty-column multiplier (~×2) → global job roles (e.g. Tech Lead) → daily random event (if it changes capacity). \"Δ vs roll\" is effective capacity minus the base roll.",
       "colMember": "Member",
       "colRoll": "Base roll",
       "colAfterSpecialist": "After column mult.",
@@ -298,6 +328,11 @@
       "colAfterDaily": "After event",
       "colEffective": "Effective capacity",
       "colDeltaVsBase": "Δ vs roll",
+      "workByTaskTitle": "Work per person and task (today)",
+      "workByTaskIntro": "Points = story/work units applied to the card today (sum of steps where that person spent capacity on that task).",
+      "noWorkDeliveries": "No capacity was applied to cards today (or no consumption was recorded).",
+      "colTask": "Task",
+      "colStoryPtsDay": "Points (day)",
       "boardTitle": "Cards per column (end of day)",
       "logTitle": "Engine log"
     }
@@ -344,38 +379,6 @@
     "dailyEventOutage": "Event: infrastructure incident — team capacity reduced.",
     "dailyEventGoodVibes": "Event: good vibes — small capacity boost for everyone."
   },
-  "traits": {
-    "comunicador": {
-      "name": "Communicator",
-      "description": "Eases alignment between stages.",
-      "gameEffect": "+0.08 to handoff multiplier (less friction between stages)."
-    },
-    "mentor": {
-      "name": "Mentor",
-      "description": "Helps others in collaborative work on Dev.",
-      "gameEffect": "+0.06 to collaboration multiplier on Dev."
-    },
-    "veterano": {
-      "name": "Veteran",
-      "description": "Strong technical command in their specialty.",
-      "gameEffect": "+0.25 to specialist bonus (base multiplier stays 2)."
-    },
-    "hiperfoco": {
-      "name": "Hyperfocus",
-      "description": "Loses efficiency when splitting attention.",
-      "gameEffect": "−1 to dice maximum (lower daily throughput cap)."
-    },
-    "evita_conflito": {
-      "name": "Conflict avoidant",
-      "description": "Holds back doubts when dynamics with the pair are poor.",
-      "gameEffect": "−0.08 to collaboration multiplier on Dev."
-    },
-    "silos": {
-      "name": "Silo mindset",
-      "description": "Makes handoffs harder.",
-      "gameEffect": "−0.10 to handoff multiplier."
-    }
-  },
   "about": {
     "title": "About the model",
     "lede": "Formulas and numeric rules used by the simulation engine (see `src/simulation/`). Rounding and caps match the TypeScript implementation.",
@@ -403,7 +406,7 @@
       "devSpend": {
         "title": "Dev capacity spend (multiple assignees)",
         "body": "With two or more distinct assignees, Dev applies a multiplier M to how effectively raw capacity reduces remaining work.",
-        "formula1": "s = average of resolveSynergy(collaboration mode) over all assignee pairs (i < j)\nτ = Σ collabMultiplierDelta traits for every assignee\nM = clamp(1 + β·s + τ, M_min, M_max)",
+        "formula1": "s = average of resolveSynergy(collaboration mode) over all assignee pairs (i < j)\nM = clamp(1 + β·s, M_min, M_max)",
         "formula2": "For each card (column order):\n  u = min(member_raw_left, remaining / M)\n  remaining ← max(0, remaining − u·M)"
       },
       "synergy": {
@@ -416,15 +419,15 @@
       "handoff": {
         "title": "Handoffs between stages",
         "body": "Between consecutive work columns: multiplier h on the next stage’s initial load, plus Bernoulli rework units.",
-        "formula1": "s = resolveSynergy(handoff mode, stage_owner_out → stage_owner_in)\nτ_h = handoffMultiplierDelta(out) + handoffMultiplierDelta(in)\nh = clamp(1 + γ·s + τ_h, h_min, h_max)",
-        "formula2": "If s < τ (threshold):\n  p₀ = clamp(0.06 + (τ − s)·0.22, 0, 0.42)\nelse p₀ = 0\np_rw = clamp(p₀ + reworkChanceDelta(out) + reworkChanceDelta(in) − R_SM, 0, 0.55)",
+        "formula1": "s = resolveSynergy(handoff mode, stage_owner_out → stage_owner_in)\nh = clamp(1 + γ·s, h_min, h_max)",
+        "formula2": "If s < τ (threshold):\n  p₀ = clamp(0.06 + (τ − s)·0.22, 0, 0.42)\nelse p₀ = 0\np_rw = clamp(p₀ − R_SM, 0, 0.55)",
         "formula3": "Entering Development or Testing after handoff:\n  R = max(0, round(W_stage / h)) + U\n\nU = reworkUnits if Bernoulli(p_rw), else 0.",
         "formula4": "Entering Analysis after a handoff:\n  remaining = W_analysis + U"
       },
       "wip": {
         "title": "Effective WIP per column",
-        "body": "Limit of cards in Analysis / Dev / Test adjusted by everyone’s traits.",
-        "formula": "WIP_eff = max(1, WIP_base + round(Σ_i maxWipDelta(i)))"
+        "body": "Limit of cards in Analysis / Dev / Test (global parameter value).",
+        "formula": "WIP_eff = max(1, WIP_base)"
       },
       "dailyEvents": {
         "title": "Daily random events",

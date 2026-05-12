@@ -2,13 +2,15 @@ import type { Card, GameConfig, Member, SimulationParams } from '../src/simulati
 import { ensureSynergyKeys } from '../src/simulation/engine';
 import { pairKey } from '../src/simulation/synergy';
 
-/** Parâmetros numéricos fixos nos experimentos (espelhar em `paper/data/parametros.tex` via `npm run paper:figures`). */
+/** Fixed numeric parameters for experiments (mirrored in `paper/data/parametros.tex` via `npm run paper:figures`). */
 export const EXPERIMENT_PARAMS: SimulationParams = {
   daysPerSprint: 10,
   numSprints: 10,
   seed: 424242,
   wipPerColumn: 3,
   planningPullMax: 6,
+  autoAdvanceOnStageComplete: true,
+  clearAssigneesAfterEachDay: false,
   synergyBeta: 0.38,
   synergyGamma: 0.42,
   collabEffMin: 0.72,
@@ -17,6 +19,7 @@ export const EXPERIMENT_PARAMS: SimulationParams = {
   handoffEffMax: 1.28,
   handoffReworkSynergyThreshold: -0.12,
   reworkUnits: 2,
+  dailyRandomEventChance: 0,
   financialLateFlatPenalty: 0,
   financialLatePerDayPenalty: 0,
   financialNotDeliveredMultiplier: 0,
@@ -93,27 +96,28 @@ function game(synergy: Record<string, number>, members: Member[]): GameConfig {
 export const SCENARIOS: { id: string; title: string; config: GameConfig }[] = [
   {
     id: 'A_baseline',
-    title: 'A — Linha de base',
+    title: 'A — Referência',
     config: game({}, membersBaseline),
   },
   {
     id: 'B_collab_synergy',
-    title: 'B — Sinergia positiva entre os desenvolvedores',
+    title: 'B — Sinergia positiva entre desenvolvedores',
     config: game({ [pairKey('bru', 'car')]: 0.88 }, membersBaseline),
   },
   {
     id: 'C_handoff_synergy',
-    title: 'C — Sinergia negativa no handoff entre analista e desenvolvedor principal',
+    title: 'C — Sinergia negativa no repasse analista–desenvolvedor líder',
     config: game({ [pairKey('ana', 'bru')]: -0.82 }, membersBaseline),
   },
   {
-    id: 'D_trait_hiperfoco',
-    title: 'D — Defeito Hiperfoco no desenvolvedor principal',
+    id: 'D_sinergia_combinada',
+    title: 'D — Sinergia positiva no par de dev e negativa no repasse analista–líder',
     config: game(
-      {},
-      membersBaseline.map((m) =>
-        m.id === 'bru' ? { ...m, traitFlawId: 'hiperfoco' } : { ...m },
-      ),
+      {
+        [pairKey('bru', 'car')]: 0.88,
+        [pairKey('ana', 'bru')]: -0.82,
+      },
+      membersBaseline,
     ),
   },
 ];

@@ -15,16 +15,15 @@ fi
 echo "A configurar repositório e atualizar o próprio tlmgr (obrigatório antes de instalar)..."
 # Mirror principal (evita avisos de espelhos não verificados em alguns BR)
 sudo tlmgr option repository https://mirror.ctan.org/systems/texlive/tlnet
-# BasicTeX muitas vezes não tem GPG do TeX Live configurado — sem isto, o tlmgr pode falhar.
-sudo tlmgr option verify-downloads 0
+# Nota: TeX Live 2026+ removeu a opção "verify-downloads"; não usar tlmgr option verify-downloads.
 sudo tlmgr update --self
 
 echo "A instalar pacotes do artigo (pode pedir a palavra-passe de administrador)..."
+# Artigo usa \usepackage[brazil]{babel}; padrões de hifenização em português.
 sudo tlmgr install \
   latexmk \
   collection-fontsrecommended \
   pgfplots \
-  babel-portuguese \
   hyphen-portuguese \
   microtype \
   enumitem \

@@ -14,7 +14,9 @@ import { COLUMN_ORDER, type ColumnId } from '../simulation/types';
 
 type Props = { data: CfdRow[] };
 
-const CFD_COLS: ColumnId[] = [...COLUMN_ORDER];
+// CFD canônico: empilhar de Deploy (banda inferior) até Backlog (banda superior).
+// Cada banda acumulada representa quantos cartões já atingiram pelo menos aquele estágio.
+const CFD_COLS: ColumnId[] = [...COLUMN_ORDER].reverse();
 
 export function CfdChart({ data }: Props) {
   const { t } = useTranslation();

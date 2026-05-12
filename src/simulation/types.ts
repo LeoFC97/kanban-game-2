@@ -5,9 +5,7 @@ export type TaskKind = 'backend' | 'frontend' | 'infrastructure' | 'design' | 'd
 
 export type ColumnId = 'backlog' | 'analise' | 'dev' | 'teste' | 'deploy';
 
-export type TraitKind = 'quality' | 'flaw';
-
-/** Numeric knobs traits can modify; unused fields stay 0. */
+/** Campos numéricos agregados por membro (Δ capacidade, colaboração, repasse, etc.); sem traços, o motor devolve zeros. */
 export interface TraitEffects {
   diceMaxDelta: number;
   specialistBonusDelta: number;
@@ -15,12 +13,6 @@ export interface TraitEffects {
   collabMultiplierDelta: number;
   maxWipDelta: number;
   reworkChanceDelta: number;
-}
-
-export interface TraitDefinition {
-  id: string;
-  kind: TraitKind;
-  effects: TraitEffects;
 }
 
 /** Efeitos de um papel de trabalho (somados entre membros que têm esse papel). */
@@ -48,15 +40,13 @@ export interface Member {
   name: string;
   specialty: Specialty;
   /**
-   * Intervalo inclusivo de pontos de entrega sorteados **antes** de multiplicadores (coluna de especialidade, traços, papéis).
-   * Se omitido, o motor usa 1…`diceMax` (legado, máx. do “dado” com traços).
+   * Intervalo inclusivo de pontos de entrega sorteados **antes** de multiplicadores (coluna de especialidade, papéis).
+   * Se omitido, o motor usa 1…`diceMax` (legado, máx. do dado base 6).
    */
   deliveryMin?: number;
   deliveryMax?: number;
   /** Papel extra (ex.: Tech Lead); opcional. */
   jobRoleId?: string;
-  traitQualityId?: string;
-  traitFlawId?: string;
   /**
    * Ajuste extra de sinergia quando o outro envolvido tem este cargo (somado à sinergia do par em `synergyByPair`).
    * Valores tipicamente em [-1, 1], combinados e limitados no motor.
@@ -109,6 +99,16 @@ export interface SimulationParams {
   wipPerColumn: number;
   /** Max cards movidos do backlog para Análise no Planning (respeitando WIP). `0` = só arrastar no quadro. */
   planningPullMax: number;
+  /**
+   * Quando `false`, ao zerar `remainingInStage` o cartão permanece na coluna até o jogador arrastar.
+   * Quando `true` ou omitido, o motor avança logo para a coluna seguinte (comportamento antigo; simulações sem UI).
+   */
+  autoAdvanceOnStageComplete?: boolean;
+  /**
+   * Quando `true`, ao fim de cada dia (Planning/Daily/Review) limpa os responsáveis dos cartões
+   * em Análise/Dev/Testes para exigir realocação manual no dia seguinte.
+   */
+  clearAssigneesAfterEachDay?: boolean;
   synergyBeta: number;
   synergyGamma: number;
   collabEffMin: number;
@@ -180,6 +180,18 @@ export interface MemberDayCapacityBreakdown {
   afterDailyEvent: number;
 }
 
+/** Esforço aplicado a um cartão num passo de gasto de capacidade (Daily / Review). */
+export interface MemberCardWorkDelivery {
+  memberId: string;
+  cardId: string;
+  columnId: ColumnId;
+  /** Unidades de trabalho do cartão consumidas (= redução em `remainingInStage` nesse passo). */
+  storyPoints: number;
+}
+
+/** Coluna + remanescente na etapa por cartão (para animação e métricas). */
+export type CardWorkSnapshot = Record<string, { col: ColumnId; rem: number }>;
+
 export interface DayLog {
   globalDay: number;
   sprint: number;
@@ -194,6 +206,13 @@ export interface DayLog {
   notes: LogNote[];
   /** Eventos aleatórios do dia (só dias úteis com trabalho). */
   dailyRandomEvents?: DailyRandomEventLog[];
+  /**
+   * Snapshots após pull do backlog no dia útil e após cada membro gastar a sua capacidade
+   * (só Daily / Review). O último item coincide com o quadro ao fim do dia.
+   */
+  workAnimationFrames?: CardWorkSnapshot[];
+  /** Entregas de esforço em cartões por membro neste dia (só Daily / Review com trabalho). */
+  workDeliveries?: MemberCardWorkDelivery[];
 }
 
 export interface CompletedCardTiming {

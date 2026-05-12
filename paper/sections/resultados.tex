@@ -1,40 +1,40 @@
 \section{Resultados ilustrativos}
 \label{sec:resultados}
 
-Todos os números desta seção são \textbf{gerados automaticamente} pelo script \texttt{npm run paper:figures}, a partir do motor \texttt{runSimulation} do repositório. As figuras foram construídas com \texttt{pgfplots} lendo arquivos CSV exportados pelo mesmo script, de modo que pequenos ajustes de parâmetros possam ser refletidos rapidamente no PDF.
+Todos os números desta secção são \textbf{gerados automaticamente} por \texttt{npm run paper:figures} a partir do motor \texttt{runSimulation} do repositório. As figuras usam \texttt{pgfplots} lendo ficheiros CSV exportados pelo mesmo script, de modo que pequenos ajustes de parâmetros podem refletir-se rapidamente no PDF.
 
 \input{data/summary_stats.tex}
 
-A Figura~\ref{fig:cfdA} mostra a dinâmica das filas no cenário A: é possível observar como o estoque em \texttt{backlog} se relaciona com o trabalho em progresso nas colunas de especialidade. As Figuras~\ref{fig:bar} e~\ref{fig:tp} condensam comparações entre cenários: a primeira destaca a média de tempo de ciclo (complementada pela mediana na Tabela~\ref{tab:resumoCenarios}), enquanto a segunda evidencia diferenças de throughput por sprint quando alteramos sinergia ou um traço isolado.
+A Figura~\ref{fig:cfdA} mostra a dinâmica de filas no cenário A: como o estoque em \texttt{backlog} se relaciona com o trabalho em progresso nas colunas de especialidade. As Figuras~\ref{fig:bar} e~\ref{fig:tp} resumem comparações entre cenários: a primeira destaca o tempo de ciclo médio (a mediana complementa a Tabela~\ref{tab:resumoCenarios}), enquanto a segunda mostra diferenças de \emph{throughput} por sprint quando o padrão de sinergia entre pares muda.
 
 \begin{figure}[htbp]
   \centering
   \input{data/fig_cfd_baseline.tex}
-  \caption{Contagens de cartões por coluna ao longo dos dias globais no cenário A (linha de base).}
+  \caption{Contagens de cartões por coluna ao longo dos dias globais no cenário A (referência).}
   \label{fig:cfdA}
 \end{figure}
 
 \begin{figure}[htbp]
   \centering
   \input{data/fig_bar_cycle.tex}
-  \caption{Média de tempo de ciclo (dias) por cenário, considerando apenas cartões concluídos na janela simulada.}
+  \caption{Tempo de ciclo médio (dias) por cenário, considerando apenas cartões concluídos na janela simulada.}
   \label{fig:bar}
 \end{figure}
 
 \begin{figure}[htbp]
   \centering
   \input{data/fig_throughput.tex}
-  \caption{Throughput por sprint (cartões que chegam a \texttt{deploy} no sprint), para os quatro cenários.}
+  \caption{\emph{Throughput} por sprint (cartões que chegam a \texttt{deploy} nessa sprint) para os quatro cenários.}
   \label{fig:tp}
 \end{figure}
 
 \begin{table}[htbp]
   \centering
-  \caption{Resumo dos quatro cenários (média e mediana de ciclo em dias; valores gerados em \texttt{summary\_stats.tex}).}
+  \caption{Resumo dos quatro cenários (ciclo médio e mediano em dias; valores gerados em \texttt{summary\_stats.tex}).}
   \label{tab:resumoCenarios}
   \begin{tabular}{@{}lccc@{}}
     \toprule
-    Cenário & Concluídos & Média ciclo & Mediana ciclo \\
+    Cenário & Concluídos & Ciclo médio & Ciclo mediano \\
     \midrule
     A & \StatCompletedA & \StatMeanCtA & \StatMedianCtA \\
     B & \StatCompletedB & \StatMeanCtB & \StatMedianCtB \\
@@ -45,6 +45,6 @@ A Figura~\ref{fig:cfdA} mostra a dinâmica das filas no cenário A: é possível
 \end{table}
 
 \paragraph{Leitura rápida.}
-No pacote reportado aqui, o cenário B tende a melhorar a média de ciclo frente ao A quando a colaboração em \texttt{dev} é amplificada, enquanto o cenário C piora a média ao combinar um \emph{handoff} desfavorável com maior chance de retrabalho. O cenário D ilustra como um traço pode não se traduzir em diferença grande na média agregada para uma mesma semente e backlog --- um lembrete útil em trabalhos de conclusão que discutem sensibilidade \emph{versus} magnitude.
+No pacote aqui reportado, o cenário B tende a melhorar o tempo de ciclo médio em relação a A quando a colaboração em \texttt{dev} é amplificada, enquanto o cenário C piora a média ao combinar um \emph{repasse} desfavorável com maior propensão a retrabalho. O cenário D combina os dois efeitos de $S$ e permite discutir interação entre canais de sinergia para a mesma semente e \emph{backlog}.
 
-Arquivos adicionais em \texttt{paper/figures/} (SVG) e \texttt{paper/data/} (CSV/JSON) permitem reproduzir as figuras fora do \LaTeX{}.
+Ficheiros adicionais em \texttt{paper/figures/} (SVG) e \texttt{paper/data/} (CSV/JSON) permitem reproduzir gráficos fora do \LaTeX{}.

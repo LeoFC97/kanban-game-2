@@ -1,0 +1,50 @@
+\section{Illustrative results}
+\label{sec:resultados}
+
+All numbers in this section are \textbf{generated automatically} by \texttt{npm run paper:figures} from the repository's \texttt{runSimulation} engine. Figures use \texttt{pgfplots} reading CSV files exported by the same script, so small parameter tweaks can be reflected quickly in the PDF.
+
+\input{data/summary_stats.tex}
+
+Figure~\ref{fig:cfdA} shows queue dynamics in scenario A: how \texttt{backlog} stock relates to work in progress in the specialty columns. Figures~\ref{fig:bar} and~\ref{fig:tp} summarize cross-scenario comparisons: the first highlights mean cycle time (the median complements Table~\ref{tab:resumoCenarios}), while the second shows throughput differences per sprint when the pairwise synergy pattern changes.
+
+\begin{figure}[htbp]
+  \centering
+  \input{data/fig_cfd_baseline.tex}
+  \caption{Card counts per column over global days in scenario A (baseline).}
+  \label{fig:cfdA}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \input{data/fig_bar_cycle.tex}
+  \caption{Mean cycle time (days) per scenario, considering only cards completed in the simulated window.}
+  \label{fig:bar}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \input{data/fig_throughput.tex}
+  \caption{Throughput per sprint (cards reaching \texttt{deploy} in that sprint) for the four scenarios.}
+  \label{fig:tp}
+\end{figure}
+
+\begin{table}[htbp]
+  \centering
+  \caption{Summary of the four scenarios (mean and median cycle in days; values generated in \texttt{summary\_stats.tex}).}
+  \label{tab:resumoCenarios}
+  \begin{tabular}{@{}lccc@{}}
+    \toprule
+    Scenario & Completed & Mean cycle & Median cycle \\
+    \midrule
+    A & \StatCompletedA & \StatMeanCtA & \StatMedianCtA \\
+    B & \StatCompletedB & \StatMeanCtB & \StatMedianCtB \\
+    C & \StatCompletedC & \StatMeanCtC & \StatMedianCtC \\
+    D & \StatCompletedD & \StatMeanCtD & \StatMedianCtD \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\paragraph{Quick read.}
+In the package reported here, scenario B tends to improve mean cycle time versus A when collaboration in \texttt{dev} is amplified, while scenario C worsens the mean by combining an unfavorable \emph{handoff} with higher rework propensity. Scenario D combines both channels of $S$, illustrating interaction for the same seed and backlog.
+
+Additional files under \texttt{paper/figures/} (SVG) and \texttt{paper/data/} (CSV/JSON) allow reproducing plots outside \LaTeX{}.

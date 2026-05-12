@@ -1,0 +1,47 @@
+\section{Prototype architecture and visual flow}
+\label{sec:arquitetura}
+
+From a software-engineering perspective, the prototype separates a \textbf{simulation core} (pure TypeScript, no \emph{framework} dependency) from a web UI layer. The core groups types (\texttt{types.ts}), seeded PRNG (\texttt{rng.ts}), synergy (\texttt{synergy.ts}), job-role catalog (\texttt{rolesCatalog.ts}), aggregated modifiers (\texttt{memberModifiers.ts}, \texttt{roleModifiers.ts}), random capacity events (\texttt{dailyRandomEvents.ts}), metrics (\texttt{metrics.ts}), an optional pedagogical \emph{financial outcome} module (\texttt{financial.ts}), and the daily engine in \texttt{engine.ts}. The UI layer (React~19, bundled with Vite) consumes only these contracts: simulation logic is not duplicated in components.
+
+\subsection{Technology stack and repository layout}
+The front end uses \textbf{React~19} with \textbf{TypeScript} (strict compilation via \texttt{tsc}), \textbf{Vite} packaging, and \textbf{Recharts} for time series (cumulative flow from \texttt{DayLog} records). Interface strings and engine log notes are externalized with \textbf{i18next} (JSON in Portuguese, English, and Spanish under \texttt{src/locales/}). The repository also contains \texttt{scripts/paperScenarios.ts} and \texttt{scripts/generate-paper-figures.ts}, invoked by \texttt{npm run paper:figures}, which regenerate figures and \LaTeX{} snippets in \texttt{paper/data/} from the same engine used in the application.
+
+\subsection{Web application workflow}
+The \texttt{App.tsx} entry keeps two phases: \textbf{setup} (editing \texttt{GameConfig}) and \textbf{playing} (configuration frozen by deep copy on start). In setup, \texttt{SetupScreen.tsx} edits members (daily delivery range, specialty, optional job role, pairwise and counterparty-specialty synergy), the synergy matrix, global parameters, and the backlog (points, task kind, deadlines). There is local \emph{preset} persistence (\texttt{localStorage}), JSON export/import, and a default scenario per language (\texttt{gameDefaults.ts}). The \textbf{About} screen (\texttt{AboutScreen.tsx}) shows condensed formulas (per-stage points, capacity, collaboration), reinforcing pedagogical transparency.
+
+In play, \texttt{PlayScreen.tsx} instantiates \texttt{createInteractiveRunner(config)}, encapsulating mutable board state, day logs (\texttt{DayLog}), completed cards, and methods \texttt{step()}, \texttt{advanceUntilAfterRetro()}, plus \texttt{updateCardAssignees(cardId,\,ids)} to change owners \emph{during} the simulation (edits in \texttt{backlog} and \texttt{deploy} are rejected; assignees are set after a card enters the flow). When any card has left the \texttt{backlog}, advancing a day can be blocked while any member does not appear as assignee on at least one card in those columns (\texttt{membersNotAssignedToAnyCard} + \texttt{hasAnyCardOutsideBacklog}). \texttt{KanbanBoard.tsx} shows per-stage remainders and assignee selectors; each day's summary opens in a modal (\texttt{DaySummaryModal.tsx}) with dice draws, effective capacity, and counts. JSON export of a match includes configuration, \emph{logs}, and final state.
+
+\subsection{Visualizations and pedagogical extensions}
+Beyond the board, the match view shows a CFD (\texttt{CfdChart.tsx}), cycle-time summary (\texttt{CycleTimeSummary.tsx}), a textual catalog of random events (\texttt{DailyEventsCatalog.tsx}), and a \textbf{synthetic financial outcome} block (\texttt{FinancialReport.tsx}, \texttt{FinancialCharts.tsx}) derived from deadlines and completions---useful for cost/delay narratives in class, without changing the core engine mechanics.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[
+    col/.style={draw, rounded corners=2pt, minimum width=1.05cm, minimum height=0.9cm, align=center, font=\scriptsize},
+    arr/.style={-{Latex[length=2mm]}, thick},
+    note/.style={font=\scriptsize, align=center},
+  ]
+    \node[col] (bl) {Backlog};
+    \node[col, right=0.35cm of bl] (an) {Analysis};
+    \node[col, right=0.35cm of an] (dv) {Dev};
+    \node[col, right=0.35cm of dv] (ts) {Test};
+    \node[col, right=0.35cm of ts] (dp) {Deploy};
+    \draw[arr] (bl) -- (an);
+    \draw[arr] (an) -- (dv);
+    \draw[arr] (dv) -- (ts);
+    \draw[arr] (ts) -- (dp);
+    \path (bl.north west) ++(-0.15,0.55) coordinate (topL);
+    \path (dp.north east) ++(0.15,0.55) coordinate (topR);
+    \draw[dashed, gray] (topL) rectangle ($(dp.south east)+(0.15,-0.35)$);
+    \node[note, anchor=south] at ($(topL)!0.5!(topR)$) {Kanban board (flow columns)};
+    \node[note, anchor=north west] at ($(bl.south west)+(-0.1,-0.85)$)
+      {\textbf{Scrum rhythm (v1):} day $1$ --- planning (pull from \emph{Backlog} to \emph{Analysis});\\
+       days $2,\ldots,D-1$ --- work (\emph{Daily});\\
+       day $D$ --- work and sprint review (marker);\\
+       formal retrospective day with no mechanical effect.};
+  \end{tikzpicture}
+  \caption{Main card flow and conceptual link to the ceremony calendar.}
+  \label{fig:fluxoQuadro}
+\end{figure}
+
+Figure~\ref{fig:fluxoQuadro} summarizes the pedagogical reading we want to preserve: Kanban organizes \emph{what} is in each stage; Scrum organizes \emph{when} cadence actions occur. The engine materializes this combination by alternating planning transitions and work steps according to Table~\ref{tab:ritos}. For batch experiments and this article's PDF, \texttt{runSimulation(config)} remains the entry point that walks all days until sprints are exhausted; the web app favors the interactive runner with the same state-transition code.

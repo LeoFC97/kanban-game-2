@@ -10,12 +10,14 @@ import type {
   BoardCard,
   BoardState,
   Card,
+  CardWorkSnapshot,
   CeremonyKind,
   ColumnId,
   CompletedCardTiming,
   DailyRandomEventLog,
   DayLog,
   MemberDayCapacityBreakdown,
+  MemberCardWorkDelivery,
   GameConfig,
   LogNote,
   Member,
@@ -27,6 +29,7 @@ import type {
 } from './types';
 import { COLUMN_ORDER, specialtyForColumn } from './types';
 import { mergeSpecialtyByTaskKind } from './taskKinds';
+import { snapshotCardWork } from './cardProgress';
 
 function addNote(
   notes: LogNote[],
@@ -148,7 +151,8 @@ function ownerForStage(
   members: Member[],
   stage: Specialty,
   specialtyByTaskKind: Record<TaskKind, Specialty>,
-): Member {
+): Member | null {
+  if (members.length === 0) return null;
   const taskKind: TaskKind = card.taskKind ?? 'backend';
   const expertSpec = specialtyByTaskKind[taskKind] ?? stage;
   const assignees = card.assigneeIds
@@ -162,7 +166,7 @@ function ownerForStage(
   }
   const fallback = memberBySpecialty(members, stage);
   if (fallback) return fallback;
-  return members[0];
+  return members[0] ?? null;
 }
 
 /** Máximo do sorteio legado 1…N quando `deliveryMax` não está definido no membro. */
@@ -172,9 +176,9 @@ export function diceMaxForMember(m: Member): number {
 }
 
 /** Teto de capacidade efetiva num dia, após multiplicadores (permite intervalos de setup mais altos que o dado clássico). */
-const EFFECTIVE_DAILY_CAPACITY_MAX = 48;
+export const EFFECTIVE_DAILY_CAPACITY_MAX = 48;
 
-function normalizedDeliveryRange(m: Member): { lo: number; hi: number } {
+export function normalizedDeliveryRange(m: Member): { lo: number; hi: number } {
   const dmax = diceMaxForMember(m);
   const minRaw = m.deliveryMin ?? 1;
   const maxRaw = m.deliveryMax ?? dmax;
@@ -197,23 +201,7 @@ function specialistMultiplier(m: Member): number {
   return clamp(2 + mod.specialistBonusDelta, 1.25, 3.5);
 }
 
-function collabTraitBonus(members: Member[], ids: string[]): number {
-  let s = 0;
-  for (const id of ids) {
-    const mem = members.find((x) => x.id === id);
-    if (mem) s += resolveMemberModifiers(mem).collabMultiplierDelta;
-  }
-  return s;
-}
-
-function handoffTraitBonus(a: Member, b: Member): number {
-  return (
-    resolveMemberModifiers(a).handoffMultiplierDelta +
-    resolveMemberModifiers(b).handoffMultiplierDelta
-  );
-}
-
-/** WIP máximo por coluna de fluxo (Análise / Dev / Teste), com ajuste pelos traços. */
+/** WIP máximo por coluna de fluxo (Análise / Dev / Teste). */
 export function wipEffective(params: SimulationParams, members: Member[]): number {
   let d = 0;
   for (const m of members) d += resolveMemberModifiers(m).maxWipDelta;
@@ -239,30 +227,31 @@ function applyAdvance(
   if (spFrom && spTo) {
     const outM = ownerForStage(card, members, spFrom, specialtyByTaskKind);
     const inM = ownerForStage(card, members, spTo, specialtyByTaskKind);
-    const s = resolveSynergy(members, synergy.synergyByPair, outM.id, inM.id, {
-      synergyPairBidirectional: synergy.synergyPairBidirectional,
-      synergyDirected: synergy.synergyDirected,
-      mode: 'handoff',
-    });
-    const traitB = handoffTraitBonus(outM, inM);
-    handoffMult = clamp(
-      1 + p.synergyGamma * s + traitB,
-      p.handoffEffMin,
-      p.handoffEffMax,
-    );
-    const thr = p.handoffReworkSynergyThreshold;
-    let pRework = s < thr ? clamp(0.06 + (thr - s) * 0.22, 0, 0.42) : 0;
-    pRework += resolveMemberModifiers(outM).reworkChanceDelta;
-    pRework += resolveMemberModifiers(inM).reworkChanceDelta;
-    pRework -= aggregateGlobalHandoffReworkChanceReduction(members);
-    pRework = clamp(pRework, 0, 0.55);
-    if (rng.next() < pRework) {
-      reworkExtra = p.reworkUnits;
-      addNote(notes, 'engine.reworkHandoff', {
-        title: card.title,
-        fromCol: from,
-        toCol: to,
+    if (outM && inM) {
+      const s = resolveSynergy(members, synergy.synergyByPair, outM.id, inM.id, {
+        synergyPairBidirectional: synergy.synergyPairBidirectional,
+        synergyDirected: synergy.synergyDirected,
+        mode: 'handoff',
       });
+      handoffMult = clamp(
+        1 + p.synergyGamma * s,
+        p.handoffEffMin,
+        p.handoffEffMax,
+      );
+      const thr = p.handoffReworkSynergyThreshold;
+      let pRework = s < thr ? clamp(0.06 + (thr - s) * 0.22, 0, 0.42) : 0;
+      pRework += resolveMemberModifiers(outM).reworkChanceDelta;
+      pRework += resolveMemberModifiers(inM).reworkChanceDelta;
+      pRework -= aggregateGlobalHandoffReworkChanceReduction(members);
+      pRework = clamp(pRework, 0, 0.55);
+      if (rng.next() < pRework) {
+        reworkExtra = p.reworkUnits;
+        addNote(notes, 'engine.reworkHandoff', {
+          title: card.title,
+          fromCol: from,
+          toCol: to,
+        });
+      }
     }
   }
   moveCard(board, card.id, from, to);
@@ -379,11 +368,10 @@ function synergyCollabMultiplier(
     }
   }
   const s = pairCount === 0 ? 0 : pairSum / pairCount;
-  const t = collabTraitBonus(members, ids);
-  return clamp(1 + p.synergyBeta * s + t, p.collabEffMin, p.collabEffMax);
+  return clamp(1 + p.synergyBeta * s, p.collabEffMin, p.collabEffMax);
 }
 
-/** Spend raw capacity `rawPool` on column; on Dev, cards with 2+ assignees apply the collaboration multiplier (average pairwise synergy). Returns raw capacity consumed. */
+/** Spend raw capacity `rawPool` on column; on Dev, cards with 2+ assignees apply the collaboration multiplier (average pairwise synergy). Returns raw capacity consumed. Cards in active work columns without any assignee are skipped — assignees are a precondition for work. */
 function spendOnColumn(
   board: BoardState,
   col: ColumnId,
@@ -394,20 +382,34 @@ function spendOnColumn(
   rng: Rng,
   notes: LogNote[],
   specialtyByTaskKind: Record<TaskKind, Specialty>,
+  actingMemberId?: string,
+  workDeliveries?: MemberCardWorkDelivery[],
 ): number {
   let rawLeft = rawPool;
   const ids = [...board.columns[col]];
+  const requireAssignees = ACTIVE_WORK_COLS.includes(col);
   for (const id of ids) {
     if (rawLeft <= 0) break;
     const card = board.cardsById[id];
     if (card.remainingInStage <= 0) continue;
+    if (requireAssignees && card.assigneeIds.length === 0) continue;
     const mult = col === 'dev' ? synergyCollabMultiplier(card, members, synergy, p) : 1;
     const maxRawForCard = card.remainingInStage / mult;
     const rawUse = Math.min(rawLeft, maxRawForCard);
     const eff = rawUse * mult;
     card.remainingInStage = Math.max(0, card.remainingInStage - eff);
     rawLeft -= rawUse;
-    tryFinishStage(board, card, col, members, synergy, p, rng, notes, specialtyByTaskKind);
+    if (actingMemberId && workDeliveries && eff > 1e-12) {
+      workDeliveries.push({
+        memberId: actingMemberId,
+        cardId: id,
+        columnId: col,
+        storyPoints: eff,
+      });
+    }
+    if (p.autoAdvanceOnStageComplete !== false) {
+      tryFinishStage(board, card, col, members, synergy, p, rng, notes, specialtyByTaskKind);
+    }
   }
   return rawPool - rawLeft;
 }
@@ -426,9 +428,12 @@ function workDayStep(
   enteredReadyDay: Record<string, number>,
   globalDay: number,
   dayCapacityMultByMemberId?: Record<string, number>,
+  workKeyframes?: CardWorkSnapshot[],
+  workDeliveries?: MemberCardWorkDelivery[],
 ): void {
   const wip = wipEffective(params, members);
   pullBacklogToAnalise(board, wip, params, notes, enteredReadyDay, globalDay);
+  if (workKeyframes) workKeyframes.push(snapshotCardWork(board));
 
   const specialtyCol = (m: Member): ColumnId | null => {
     const w = WORK_COLS.find((x) => x.specialty === m.specialty);
@@ -475,12 +480,37 @@ function workDayStep(
     effectiveCapacityByMemberId[m.id] = rawCap;
     let left = rawCap;
     if (sc && hasWork(sc)) {
-      left -= spendOnColumn(board, sc, left, members, synergy, params, rng, notes, specialtyByTaskKind);
+      left -= spendOnColumn(
+        board,
+        sc,
+        left,
+        members,
+        synergy,
+        params,
+        rng,
+        notes,
+        specialtyByTaskKind,
+        m.id,
+        workDeliveries,
+      );
     }
     for (const { col } of WORK_COLS) {
       if (left <= 0) break;
-      left -= spendOnColumn(board, col, left, members, synergy, params, rng, notes, specialtyByTaskKind);
+      left -= spendOnColumn(
+        board,
+        col,
+        left,
+        members,
+        synergy,
+        params,
+        rng,
+        notes,
+        specialtyByTaskKind,
+        m.id,
+        workDeliveries,
+      );
     }
+    if (workKeyframes) workKeyframes.push(snapshotCardWork(board));
   }
 }
 
@@ -565,6 +595,16 @@ export function canManuallyAdvanceCardFromColumn(card: BoardCard, fromCol: Colum
   return card.remainingInStage <= 1e-9;
 }
 
+function clearAssigneesFromActiveWorkColumns(board: BoardState): void {
+  for (const col of ACTIVE_WORK_COLS) {
+    for (const cardId of board.columns[col]) {
+      const card = board.cardsById[cardId];
+      if (!card) continue;
+      card.assigneeIds = [];
+    }
+  }
+}
+
 export type InteractiveRunner = {
   step: () => DayLog | null;
   /** Avança até processar uma Retrospectiva (fim lógico do sprint) ou até o jogo terminar. */
@@ -639,6 +679,8 @@ export function createInteractiveRunner(config: GameConfig): InteractiveRunner {
         }
         const rolled = rollDailyRandomEvents(members, params, rng, notes);
         if (rolled.events.length > 0) dailyRandomEvents = rolled.events;
+        const workAnimationFrames: CardWorkSnapshot[] = [];
+        const workDeliveries: MemberCardWorkDelivery[] = [];
         workDayStep(
           board,
           members,
@@ -653,7 +695,33 @@ export function createInteractiveRunner(config: GameConfig): InteractiveRunner {
           enteredReadyDay,
           globalDay,
           rolled.capacityMultByMemberId,
+          workAnimationFrames,
+          workDeliveries,
         );
+        recordDeploys();
+        const log: DayLog = {
+          globalDay,
+          sprint,
+          dayInSprint,
+          ceremony,
+          diceByMemberId,
+          effectiveCapacityByMemberId,
+          ...(ceremony === 'daily_scrum' || ceremony === 'sprint_review'
+            ? { capacityBreakdownByMemberId }
+            : {}),
+          columnCounts: countColumns(board),
+          notes,
+          ...(dailyRandomEvents && dailyRandomEvents.length > 0 ? { dailyRandomEvents } : {}),
+          ...(workAnimationFrames.length > 0 ? { workAnimationFrames } : {}),
+          ...(workDeliveries.length > 0 ? { workDeliveries } : {}),
+        };
+        logs.push(log);
+        if (params.clearAssigneesAfterEachDay) {
+          clearAssigneesFromActiveWorkColumns(board);
+        }
+        if (dayInSprint < params.daysPerSprint) dayInSprint++;
+        else inRetro = true;
+        return log;
       }
 
       recordDeploys();
@@ -664,14 +732,14 @@ export function createInteractiveRunner(config: GameConfig): InteractiveRunner {
         ceremony,
         diceByMemberId,
         effectiveCapacityByMemberId,
-        ...(ceremony === 'daily_scrum' || ceremony === 'sprint_review'
-          ? { capacityBreakdownByMemberId }
-          : {}),
         columnCounts: countColumns(board),
         notes,
         ...(dailyRandomEvents && dailyRandomEvents.length > 0 ? { dailyRandomEvents } : {}),
       };
       logs.push(log);
+      if (params.clearAssigneesAfterEachDay) {
+        clearAssigneesFromActiveWorkColumns(board);
+      }
       if (dayInSprint < params.daysPerSprint) dayInSprint++;
       else inRetro = true;
       return log;
@@ -698,13 +766,35 @@ export function createInteractiveRunner(config: GameConfig): InteractiveRunner {
     const card = board.cardsById[cardId];
     if (!card) return { ok: false, errorKey: 'play.assigneeUnknownCard' };
     const col = columnOfCard(board, cardId);
+    if (col === 'backlog') {
+      return { ok: false, errorKey: 'play.assigneeReadOnlyBacklog', errorParams: { title: card.title } };
+    }
     if (col === 'deploy') {
       return { ok: false, errorKey: 'play.assigneeReadOnlyDeploy', errorParams: { title: card.title } };
     }
     if (!col) return { ok: false, errorKey: 'play.assigneeUnknownCard' };
     const res = resolveAssigneesForCard(card, members, assigneeIds);
     if (!res.ok) return res;
-    card.assigneeIds = res.ids;
+    const next = res.ids;
+    for (const aid of next) {
+      for (const workCol of ACTIVE_WORK_COLS) {
+        for (const cid of board.columns[workCol]) {
+          if (cid === cardId) continue;
+          const other = board.cardsById[cid];
+          if (!other) continue;
+          const otherAssigneeIds = other.assigneeIds.map((tok) => resolveMemberIdFromToken(members, tok));
+          if (otherAssigneeIds.includes(aid)) {
+            const name = members.find((m) => m.id === aid)?.name ?? aid;
+            return {
+              ok: false,
+              errorKey: 'errors.memberSingleActiveCard',
+              errorParams: { name, cardTitle: other.title },
+            };
+          }
+        }
+      }
+    }
+    card.assigneeIds = next;
     return { ok: true };
   }
 
@@ -765,19 +855,78 @@ export function createInteractiveRunner(config: GameConfig): InteractiveRunner {
   };
 }
 
-/** Membros que não aparecem como assignees em nenhum cartão do quadro (qualquer coluna). */
+/** Colunas em que responsáveis contam para regras de alocação no jogo (exclui backlog: não se atribui pessoas aí). */
+const ASSIGNMENT_COUNTING_COLS: ColumnId[] = ['analise', 'dev', 'teste', 'deploy'];
+const ACTIVE_WORK_COLS: ColumnId[] = ['analise', 'dev', 'teste'];
+
+export function normalizeAssigneeToken(v: string): string {
+  return v
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLocaleLowerCase();
+}
+
+export function normalizedMemberKey(v: string): string {
+  return normalizeAssigneeToken(v).replace(/[^a-z0-9]/g, '');
+}
+
+export function resolveMemberIdFromToken(members: Member[], assigneeToken: string): string {
+  const token = normalizedMemberKey(assigneeToken);
+  const byId = members.find((m) => normalizedMemberKey(m.id) === token);
+  if (byId) return byId.id;
+  const byName = members.find((m) => normalizedMemberKey(m.name) === token);
+  return byName?.id ?? assigneeToken;
+}
+
+/** Resolve um token (id ou nome, com tolerância a acentos/caixa) para o `Member` correspondente, ou `undefined`. */
+export function resolveMemberFromToken(members: Member[], assigneeToken: string): Member | undefined {
+  const token = normalizedMemberKey(assigneeToken);
+  return (
+    members.find((m) => normalizedMemberKey(m.id) === token) ??
+    members.find((m) => normalizedMemberKey(m.name) === token)
+  );
+}
+
+/** Há pelo menos um cartão fora do backlog (fluxo ou concluído). */
+export function hasAnyCardOutsideBacklog(board: BoardState): boolean {
+  for (const col of ASSIGNMENT_COUNTING_COLS) {
+    if (board.columns[col].length > 0) return true;
+  }
+  return false;
+}
+
+/** Membros que não aparecem como assignees em nenhum cartão fora do backlog. */
 export function membersNotAssignedToAnyCard(board: BoardState, members: Member[]): Member[] {
   const assigned = new Set<string>();
-  for (const col of COLUMN_ORDER) {
+  for (const col of ASSIGNMENT_COUNTING_COLS) {
     for (const cid of board.columns[col]) {
       const c = board.cardsById[cid];
       if (!c) continue;
       for (const aid of c.assigneeIds) {
-        if (aid) assigned.add(aid);
+        if (aid) assigned.add(resolveMemberIdFromToken(members, aid));
       }
     }
   }
   return members.filter((m) => !assigned.has(m.id));
+}
+
+/** Membros atribuídos a mais de um cartão em trabalho ativo (Análise/Dev/Testes). */
+export function membersAssignedToMultipleWorkCards(board: BoardState, members: Member[]): Member[] {
+  const byMemberId: Record<string, number> = {};
+  for (const col of ACTIVE_WORK_COLS) {
+    for (const cid of board.columns[col]) {
+      const c = board.cardsById[cid];
+      if (!c) continue;
+      const uniq = new Set(
+        c.assigneeIds
+          .filter(Boolean)
+          .map((aid) => resolveMemberIdFromToken(members, aid)),
+      );
+      for (const aid of uniq) byMemberId[aid] = (byMemberId[aid] ?? 0) + 1;
+    }
+  }
+  return members.filter((m) => (byMemberId[m.id] ?? 0) > 1);
 }
 
 export function runSimulation(config: GameConfig): SimulationResult {

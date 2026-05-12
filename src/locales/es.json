@@ -50,13 +50,11 @@
   },
   "setup": {
     "title": "Configuración de la partida",
-    "lede": "Arma el equipo, rasgos, matriz de sinergia y backlog. Al iniciar, la configuración queda congelada hasta volver al setup.",
+    "lede": "Arma el equipo, matriz de sinergia y backlog. Al iniciar, la configuración queda congelada hasta volver al setup.",
     "team": "Equipo",
     "addMember": "+ Miembro",
     "memberNamePlaceholder": "Nombre",
-    "quality": "Fortaleza",
-    "flaw": "Debilidad",
-    "traitNone": "—",
+    "jobRoleNone": "—",
     "remove": "Eliminar",
     "synergyTitle": "Sinergia (por pares)",
     "backlogTitle": "Backlog inicial",
@@ -119,12 +117,12 @@
     "tableBusinessValue": "Valor ($)",
     "tableDueGlobalDay": "Plazo (día global)",
     "tableDueGlobalDayHint": "Día global inclusivo: deploy hasta este día evita penalización por retraso. Vacío = sin plazo.",
-    "assigneeDragIntro": "Los asignados no se configuran aquí. En la partida, arrastra miembros del equipo a cada tarjeta en el tablero (todos deben figurar en al menos una tarjeta antes de avanzar el día).",
+    "assigneeDragIntro": "Los asignados no se configuran aquí. En la partida, arrastra miembros a tarjetas que ya salieron del Backlog (en el Backlog no se asigna gente); cuando haya tarjetas en Análisis o más allá, todos deben figurar en al menos una de esas tarjetas antes de avanzar el día.",
     "tableAssignees": "Asignados",
     "assigneeOptional": "2.ª persona (opcional)",
     "paramsTitle": "Parámetros de simulación",
     "hypothesisTitle": "Hipótesis / reglas",
-    "hypothesisBody": "Cada miembro define un intervalo (mín–máx) de puntos de entrega por día hábil; cada día se sortea un entero uniforme en ese intervalo. Solo después se aplican multiplicadores: columna de especialidad (~×2 + rasgos), luego bonos globales de papel (p. ej. Tech Lead). Sin intervalo, se usa el legado 1…máx. del dado (máx. afectado por rasgos). En Dev, las tarjetas con varias personas asignadas usan la media de sinergia entre todos los pares y los rasgos de colaboración de cada uno. Los handoffs usan γ y rasgos; sinergia baja aumenta el retrabajo; Scrum Master reduce el retrabajo en handoffs para todo el equipo. En días de Daily y Sprint Review puede ocurrir un evento aleatorio (enfermedad, vacaciones, etc.) según la probabilidad configurada — ver la lista en la partida. Cada tarea puede tener valor de negocio y plazo (día global); al final de la partida el informe financiero suma el neto con penalizaciones por retraso o no entrega.",
+    "hypothesisBody": "Cada miembro define un intervalo (mín–máx) de puntos de entrega por día hábil; cada día se sortea un entero uniforme en ese intervalo. Solo después se aplican multiplicadores: columna de especialidad (~×2), luego bonos globales de papel (p. ej. Tech Lead). Sin intervalo, se usa el legado 1…6 en el dado. En Dev, las tarjetas con varias personas asignadas usan la media de sinergia entre todos los pares de asignados. Los handoffs usan γ y la sinergia par a par; sinergia baja aumenta el retrabajo; Scrum Master reduce el retrabajo en handoffs para todo el equipo. En días de Daily y Sprint Review puede ocurrir un evento aleatorio (enfermedad, vacaciones, etc.) según la probabilidad configurada — ver la lista en la partida. Cada tarea puede tener valor de negocio y plazo (día global); al final de la partida el informe financiero suma el neto con penalizaciones por retraso o no entrega.",
     "deliveryRange": "Entrega diaria (mín — máx)",
     "deliveryHint": "Sorteo uniforme cada día en ese intervalo; los multiplicadores de especialista y papel se aplican después (tope diario en el motor).",
     "jobRole": "Papel (opcional)",
@@ -167,7 +165,8 @@
   "errors": {
     "atLeastOneMember": "Define al menos un miembro.",
     "assigneesMustBeDistinct": "La tarjeta «{{title}}» no puede repetir la misma persona en los dos asignados.",
-    "cardOneAssignee": "La tarjeta «{{title}}» necesita al menos 1 asignado."
+    "cardOneAssignee": "La tarjeta «{{title}}» necesita al menos 1 asignado.",
+    "memberSingleActiveCard": "{{name}} ya está asignado a la tarjeta «{{cardTitle}}» en trabajo activo. Cada persona solo puede estar en 1 tarjeta a la vez."
   },
   "synergy": {
     "needTwoMembers": "Añade al menos dos miembros para editar la sinergia.",
@@ -182,8 +181,6 @@
     "pts": "pts",
     "remaining": "restante",
     "collabShort": "colab",
-    "financialValue": "valor {{v}}",
-    "financeDollar": "US$ {{v}}",
     "stageUnitsShort": "A{{a}} · D{{d}} · T{{te}}",
     "financialDue": "plazo día {{day}}",
     "idleTitle": "En espera (sin tarjeta en el flujo)",
@@ -191,12 +188,30 @@
     "dragCardHint": "Arrastra el icono ⋮⋮ de cada tarjeta para cambiar de columna.",
     "dragHandleTitle": "Arrastrar tarjeta",
     "wipCount": "{{n}}/{{wip}}",
-    "assigneePoolLabel": "Equipo (arrastrar a la tarjeta)",
-    "assigneePoolSublabel": "Suelta aquí el chip de un responsable para quitarlo de la tarjeta.",
+    "assigneePoolLabel": "Equipo — arrastra estos nombres",
+    "assigneePoolSublabel": "Para quitar a alguien de una tarjeta, arrastra su chip de vuelta a este recuadro discontinuo.",
+    "assigneePoolEmpty": "No hay nadie disponible aquí: todos ya están en tarjetas activas.",
+    "assigneeHowTitle": "Cómo asignar personas a las tarjetas",
+    "assigneeHowStep1": "Haz clic y mantén pulsado un nombre en el recuadro «Equipo» de abajo y arrástralo.",
+    "assigneeHowStep2": "Suéltalo sobre las casillas discontinuas bajo «Asignados» en la tarjeta (o «+ añadir»). Puedes poner a varias personas en la misma tarjeta.",
+    "assigneeHowStep3": "En Backlog y Deploy los asignados no se editan aquí — define el equipo cuando la tarjeta esté en Análisis, Dev o Pruebas.",
     "assigneeSlot1": "1.ª persona",
     "assigneeSlot2": "2.ª persona (opcional)",
     "assigneeSlotAdd": "+ añadir",
-    "dragAssigneeOff": "Arrastra al área Equipo para quitar"
+    "assigneeSlotDropHere": "Suelta aquí",
+    "dragAssigneeOff": "Arrastra al área Equipo para quitar",
+    "tooltip": {
+      "title": "{{name}} — rango diario estimado en esta tarjeta",
+      "base": "B ~ U({{min}}, {{max}})",
+      "specialist": "Especialista ({{col}}) ×{{mult}}",
+      "specialistNoWork": "(sin trabajo en esa columna -> ×1)",
+      "roles": "Papeles globales ×{{mult}}",
+      "randomEvent": "Evento aleatorio ×[{{min}}, {{max}}]",
+      "synergyDevWithS": "Sinergia en Dev: s̄={{s}} -> ×{{mult}}",
+      "synergyDev": "Sinergia en Dev: ×{{mult}}",
+      "range": "Entrega estimada en esta tarjeta: [{{min}}, {{max}}] pts/día",
+      "stageCap": "Tope por restante de etapa: {{cap}} pts"
+    }
   },
   "cfd": {
     "title": "Diagrama de flujo acumulativo (CFD)",
@@ -263,34 +278,49 @@
     "chartsButton": "Gráficos",
     "chartsModalTitle": "CFD y finanzas",
     "chartsModalClose": "Cerrar",
+    "dailyEventsCatalogButton": "Acontecimientos aleatorios (referencia)",
+    "dailyEventsModalClose": "Cerrar",
     "resetMatch": "Reiniciar partida",
     "backToSetup": "Volver al setup",
     "globalDay": "Día global {{day}}",
     "sprintBadge": "Sprint {{n}}",
     "dayBadge": "Día {{n}}",
     "calendarHint": "Avanza un día para comenzar el calendario.",
-    "kanbanAssigneesHint": "Asignados: arrastra desde el equipo a una casilla de la tarjeta o a «+ añadir»; arrastra el chip de vuelta a «Equipo» para quitar. Tantas personas como quieras. Solo lectura en Deploy.",
+    "kanbanAssigneesHint": "Asignados: arrastra desde el equipo a una casilla de la tarjeta o a «+ añadir»; arrastra el chip de vuelta a «Equipo» para quitar. Tantas personas como quieras. Solo lectura en Backlog y Deploy.",
     "kanbanDragCardsHint": "Tarjetas: arrastra ⋮⋮ solo hacia delante — Backlog → Análisis → Desarrollo → Pruebas → Deploy. En Análisis, Dev y Pruebas solo puedes avanzar cuando el restante de la etapa sea cero; respeta el WIP.",
+    "stageColorLegendTitle": "Leyenda de colores:",
+    "stageColorAnalysis": "Rojo = Análisis",
+    "stageColorDev": "Azul = Desarrollo",
+    "stageColorTest": "Verde = Pruebas",
+    "stageColorDeploy": "Amarillo = Deploy",
     "manualMoveWipFull": "No se pueden añadir más tarjetas a «{{col}}»: el límite WIP es {{wip}}.",
     "manualMoveStageIncomplete": "Termina el trabajo en esta etapa (restante a cero) antes de arrastrar la tarjeta a la columna siguiente.",
     "manualMoveNotAllowed": "Ese movimiento entre columnas no está permitido (solo avance en el flujo).",
     "manualMoveFromDeploy": "Las tarjetas en Deploy no se pueden mover.",
     "manualMoveUnknownCard": "Tarjeta no encontrada.",
     "dismissMoveError": "Cerrar",
+    "assigneeReadOnlyBacklog": "En el Backlog no se asignan responsables a «{{title}}» — mueve la tarjeta a Análisis (o más allá) y define el equipo allí.",
     "assigneeReadOnlyDeploy": "No se pueden cambiar asignados en Deploy para «{{title}}».",
     "assigneeUnknownCard": "Tarjeta no encontrada en el tablero.",
-    "allocationBlocked": "No se puede avanzar el día: estos miembros no figuran en ninguna tarjeta del tablero: {{names}}.",
-    "allocationBlockedHint": "Asigna a cada persona a al menos una tarjeta (en cualquier columna) antes de continuar.",
+    "allocationBlocked": "No se puede avanzar el día: estos miembros no figuran como asignados en ninguna tarjeta fuera del Backlog: {{names}}.",
+    "allocationBlockedHint": "Asigna a cada persona a al menos una tarjeta que ya haya salido del Backlog (Análisis, Dev, Tests o Deploy) antes de continuar.",
+    "overbookedBlocked": "No se puede avanzar: estos miembros están asignados a más de una tarjeta activa (Análisis/Dev/Pruebas): {{names}}.",
+    "overbookedBlockedHint": "Quita a cada persona de las tarjetas sobrantes para que cada miembro quede en solo 1 tarjeta activa a la vez.",
+    "unassignedActiveCards": "Las tarjetas en columnas activas sin responsable asignado no reciben capacidad hoy: {{titles}}.",
+    "unassignedActiveCardsHint": "Arrastra personas a las tarjetas en Análisis, Dev o Pruebas antes de avanzar el día.",
     "advanceOneDay": "Avanzar 1 día",
     "advanceSprint": "Avanzar hasta después de la Retrospectiva",
     "runAll": "Simular todos los sprints",
+    "dayDetails": "Detalles del día",
     "lastDayEvents": "Eventos del último día",
+    "workAnimPull": "Pull del día: progreso total +{{delivered}} puntos",
+    "workAnimMember": "{{name}} entrega {{delivered}} puntos en este paso (capacidad efectiva: {{cap}}).",
     "dayModal": {
       "title": "Resumen del día",
       "close": "Cerrar",
       "randomEvents": "Acontecimientos del día",
       "capacityTitle": "Sorteo y capacidad efectiva",
-      "capacityMultFootnote": "Orden de multiplicadores: sorteo base → columna de especialidad (~×2 + rasgos) → papeles globales (p. ej. Tech Lead) → evento aleatorio del día (si cambia la capacidad). «Δ vs sorteo» es la capacidad efectiva menos el sorteo inicial.",
+      "capacityMultFootnote": "Orden de multiplicadores: sorteo base → columna de especialidad (~×2) → papeles globales (p. ej. Tech Lead) → evento aleatorio del día (si cambia la capacidad). «Δ vs sorteo» es la capacidad efectiva menos el sorteo inicial.",
       "colMember": "Miembro",
       "colRoll": "Sorteo base",
       "colAfterSpecialist": "Tras mult. columna",
@@ -298,6 +328,11 @@
       "colAfterDaily": "Tras evento",
       "colEffective": "Capacidad efectiva",
       "colDeltaVsBase": "Δ vs sorteo",
+      "workByTaskTitle": "Trabajo por persona y tarea (hoy)",
+      "workByTaskIntro": "Puntos = unidades de esfuerzo aplicadas a la tarjeta hoy (suma de pasos en los que esa persona consumió capacidad en esa tarea).",
+      "noWorkDeliveries": "Nadie aplicó capacidad a tarjetas hoy (o no hubo consumo registrado).",
+      "colTask": "Tarea",
+      "colStoryPtsDay": "Puntos (día)",
       "boardTitle": "Tarjetas por columna (fin del día)",
       "logTitle": "Registro del motor"
     }
@@ -344,38 +379,6 @@
     "dailyEventOutage": "Evento: incidente de infraestructura — capacidad del equipo reducida.",
     "dailyEventGoodVibes": "Evento: buen ambiente — pequeño aumento de capacidad para todos."
   },
-  "traits": {
-    "comunicador": {
-      "name": "Comunicador",
-      "description": "Facilita el alineamiento entre etapas.",
-      "gameEffect": "+0,08 al multiplicador de handoff (menos fricción entre etapas)."
-    },
-    "mentor": {
-      "name": "Mentor",
-      "description": "Ayuda a la pareja en trabajo colaborativo.",
-      "gameEffect": "+0,06 al multiplicador de colaboración en Dev."
-    },
-    "veterano": {
-      "name": "Veterano",
-      "description": "Dominio técnico en la especialidad.",
-      "gameEffect": "+0,25 al bono de especialista (el multiplicador base sigue en 2)."
-    },
-    "hiperfoco": {
-      "name": "Hiperfoco",
-      "description": "Pierde eficiencia al dividir la atención.",
-      "gameEffect": "−1 al máximo del dado (tope menor de throughput diario)."
-    },
-    "evita_conflito": {
-      "name": "Evita el conflicto",
-      "description": "Retiene dudas cuando la dinámica con la pareja es mala.",
-      "gameEffect": "−0,08 al multiplicador de colaboración en Dev."
-    },
-    "silos": {
-      "name": "Mentalidad de silo",
-      "description": "Dificulta el pase de testigo.",
-      "gameEffect": "−0,10 al multiplicador de handoff."
-    }
-  },
   "about": {
     "title": "Acerca del modelo",
     "lede": "Fórmulas y reglas numéricas del motor de simulación (ver `src/simulation/`). Los redondeos y techos coinciden con el TypeScript.",
@@ -403,7 +406,7 @@
       "devSpend": {
         "title": "Consumo de capacidad en Dev (varios asignados)",
         "body": "Con dos o más responsables distintos, Dev aplica un multiplicador M a la eficacia del esfuerzo bruto.",
-        "formula1": "s = media de resolveSynergy(modo colaboración) sobre todos los pares de asignados (i < j)\nτ = Σ Δ_colab de rasgos de todos los asignados\nM = clamp(1 + β·s + τ, M_min, M_max)",
+        "formula1": "s = media de resolveSynergy(modo colaboración) sobre todos los pares de asignados (i < j)\nM = clamp(1 + β·s, M_min, M_max)",
         "formula2": "Para cada tarjeta (orden de columna):\n  u = min(cap_restante, remaining / M)\n  remaining ← max(0, remaining − u·M)"
       },
       "synergy": {
@@ -416,15 +419,15 @@
       "handoff": {
         "title": "Handoff entre etapas",
         "body": "Entre columnas de trabajo consecutivas: multiplicador h sobre la carga siguiente y probabilidad de rework extra.",
-        "formula1": "s = resolveSynergy(modo handoff, dueño_salida → dueño_entrada)\nτ_h = Δ_handoff(salida) + Δ_handoff(entrada)\nh = clamp(1 + γ·s + τ_h, h_min, h_max)",
-        "formula2": "Si s < τ:\n  p₀ = clamp(0,06 + (τ − s)·0,22, 0, 0,42)\nsino p₀ = 0\np_rw = clamp(p₀ + Δ_rework(salida) + Δ_rework(entrada) − R_SM, 0, 0,55)",
+        "formula1": "s = resolveSynergy(modo handoff, dueño_salida → dueño_entrada)\nh = clamp(1 + γ·s, h_min, h_max)",
+        "formula2": "Si s < τ:\n  p₀ = clamp(0,06 + (τ − s)·0,22, 0, 0,42)\nsino p₀ = 0\np_rw = clamp(p₀ − R_SM, 0, 0,55)",
         "formula3": "Dev o Test tras handoff:\n  R = max(0, round(W_etapa / h)) + U\n\nU = reworkUnits si Bernoulli(p_rw), si no 0.",
         "formula4": "Análisis tras handoff:\n  remaining = W_analisis + U"
       },
       "wip": {
         "title": "WIP efectivo por columna",
-        "body": "Límite de tarjetas en Análisis / Dev / Test con corrección por rasgos.",
-        "formula": "WIP_efectivo = max(1, WIP_base + round(Σ_i Δ_WIP(i)))"
+        "body": "Límite de tarjetas en Análisis / Dev / Test (valor global del parámetro).",
+        "formula": "WIP_efectivo = max(1, WIP_base)"
       },
       "dailyEvents": {
         "title": "Eventos aleatorios del día",

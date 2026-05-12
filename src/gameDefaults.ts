@@ -28,6 +28,10 @@ export function defaultParams(): SimulationParams {
     wipPerColumn: 3,
     /** 0 = não puxar cartões do backlog no planning; usa-se arrastar manualmente no quadro. */
     planningPullMax: 0,
+    /** Só o jogador move o cartão para a coluna seguinte quando a etapa fica a zero. */
+    autoAdvanceOnStageComplete: false,
+    /** Ao fim de cada dia útil/planning, responsáveis são limpos para forçar realocação manual. */
+    clearAssigneesAfterEachDay: true,
     synergyBeta: 0.35,
     synergyGamma: 0.25,
     collabEffMin: 0.55,
@@ -50,22 +54,16 @@ export function defaultMembers(lang: AppLanguage = 'pt-BR'): Member[] {
       id: 'm1',
       name: sc.members.ana,
       specialty: 'Analista',
-      traitQualityId: 'comunicador',
-      traitFlawId: 'hiperfoco',
     },
     {
       id: 'm2',
       name: sc.members.bruno,
       specialty: 'Desenvolvedor',
-      traitQualityId: 'mentor',
-      traitFlawId: 'evita_conflito',
     },
     {
       id: 'm3',
       name: sc.members.carla,
       specialty: 'Testador',
-      traitQualityId: 'veterano',
-      traitFlawId: 'silos',
     },
   ];
 }

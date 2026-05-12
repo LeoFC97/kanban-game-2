@@ -1,25 +1,25 @@
-\section{Ritos Scrum no calendário}
+\section{Ritos do Scrum no calendário}
 \label{sec:ritos}
 
-Para cada sprint $k=1,\dots,K$, indexamos dias $d=1,\dots,D$ e um dia adicional formal de \emph{retrospectiva} sem alteração mecânica do estado no protótipo atual (apenas registro em log).
+Para cada sprint $k=1,\dots,K$, indexamos os dias $d=1,\dots,D$ e um dia formal adicional de \emph{retrospectiva} sem alteração mecânica de estado no protótipo atual (apenas registro no log).
 
 \begin{table}[htbp]
   \centering
-  \caption{Mapeamento simples entre dia no sprint e modo de processamento.}
+  \caption{Mapeamento simples entre dia na sprint e modo de processamento.}
   \label{tab:ritos}
   \begin{tabular}{@{}llp{7.2cm}@{}}
     \toprule
     Dia $d$ & Rito / modo & Efeito no motor (v1) \\
     \midrule
-    $1$ & \emph{Sprint Planning} & Puxa cartões de \texttt{backlog} para \texttt{analise} até $P_{\max}$ (e WIP); em seguida, se $P_{\max}>0$, continua a preencher \texttt{analise} a partir do \texttt{backlog} até ao WIP. \\
-    $2,\dots,D-1$ & \emph{Daily Scrum} & Dia de trabalho: aplica capacidade, alocação e avanços. \\
-    $D$ & \emph{Sprint Review} & Também dia de trabalho (mesma mecânica), com marcação explícita no log. \\
-    $D{+}1$ & \emph{Retrospectiva} & Sem efeito mecânico; encerra sprint e reinicia $d\leftarrow 1$. \\
+    $1$ & \emph{Sprint Planning} & Puxar cartões de \texttt{backlog} para \texttt{analise} até $P_{\max}$ (e WIP); depois, se $P_{\max}>0$, continuar preenchendo \texttt{analise} a partir de \texttt{backlog} até o WIP. \\
+    $2,\dots,D-1$ & \emph{Daily Scrum} & Dia útil: aplicar capacidade, alocação e avanços. \\
+    $D$ & \emph{Sprint Review} & Também dia útil (mesma mecânica), com marcador explícito no log. \\
+    $D{+}1$ & \emph{Retrospectiva} & Sem efeito mecânico; encerra a sprint e reinicia $d\leftarrow 1$. \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-A separação pedagógica entre ``marcador'' de Daily e o processamento de trabalho facilita narrativas de ensino: o calendário Scrum aparece como \textbf{ritmo} sobreposto ao \textbf{fluxo} Kanban~\cite{schwaber2002agile}, sem exigir modelagem de horas de reunião na primeira versão. Em termos de modelagem OR, os ritos funcionam como \textbf{modos} do mesmo relógio de simulação: mudam quais transições são habilitadas no início do dia (puxar \emph{vs.} apenas processar), preservando um único estado de sistema entre dias.
+A separação pedagógica entre um ``marcador'' diário e o processamento de trabalho apoia narrativas em sala: o calendário Scrum aparece como \textbf{ritmo} sobreposto ao \textbf{fluxo} Kanban~\cite{schwaber2002agile,schwaber2020scrum}, sem modelar horas de reunião na primeira versão. Em termos de PO, os ritos atuam como \textbf{modos} do mesmo relógio de simulação: alteram quais transições estão habilitadas no início do dia (puxar \emph{vs.} apenas processar), preservando um único estado do sistema ao longo dos dias.
 
 \paragraph{Eventos aleatórios de capacidade (Daily e Review).}
-Nos dias de \emph{Daily Scrum} e \emph{Sprint Review}, o motor aplica uma probabilidade global configurável (\texttt{dailyRandomEventChance}): com essa probabilidade, sorteia-se \emph{no máximo} um evento de um catálogo ponderado (doença, férias, meio período, reunião de equipa, incidente de infraestrutura, ``bom clima''), cada qual com multiplicador ou anulação de capacidade efetiva para membros afetados. Os acontecimentos aparecem no \texttt{DayLog} e são listados na interface para consulta pedagógica.
+Nos dias de \emph{Daily Scrum} e \emph{Sprint Review}, o motor aplica uma probabilidade global configurável (\texttt{dailyRandomEventChance}): com essa probabilidade, sorteia-se \emph{no máximo} um evento de um catálogo ponderado (doença, férias, meio período, reunião de equipe, incidente de infraestrutura, ``ânimo'' positivo), cada um aplicando multiplicador ou zerando a capacidade efetiva dos membros afetados. Os eventos aparecem em \texttt{DayLog} e são listados na interface para fins pedagógicos.

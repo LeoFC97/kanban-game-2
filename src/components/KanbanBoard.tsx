@@ -1,7 +1,14 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { BoardState, ColumnId, Member, SimulationParams } from '../simulation/types';
-import { canManuallyAdvanceCardFromColumn, isManualCardMoveAllowed, wipEffective } from '../simulation/engine';
+import {
+  canManuallyAdvanceCardFromColumn,
+  ensureSynergyKeys,
+  isManualCardMoveAllowed,
+  resolveMemberIdFromToken,
+  wipEffective,
+} from '../simulation/engine';
+import { formatMoney } from '../formatMoney';
 import { CARD_DRAG_MIME, parseCardDragPayload, stringifyCardDragPayload } from './cardDnD';
 import {
   ASSIGNEE_DRAG_MIME,
@@ -24,20 +31,29 @@ type Props = {
   board: BoardState;
   members: Member[];
   params: SimulationParams;
+  synergyByPair?: Record<string, number>;
+  synergyPairBidirectional?: Record<string, boolean>;
+  synergyDirected?: Record<string, number>;
   onUpdateAssignees: (cardId: string, assigneeIds: string[]) => void;
   onManualMoveCard: (cardId: string, fromColumn: ColumnId, toColumn: ColumnId) => void;
   /** Mapa opcional: animação de progresso após avançar um dia de trabalho. */
   workFillPulse?: WorkFillPulse | null;
 };
 
-function assigneeIdsInFlow(board: BoardState): Set<string> {
+function specialtyToneClass(s: Member['specialty']): string {
+  if (s === 'Analista') return 'tone-analyst';
+  if (s === 'Desenvolvedor') return 'tone-dev';
+  return 'tone-test';
+}
+
+function assigneeIdsInFlow(board: BoardState, members: Member[]): Set<string> {
   const ids = new Set<string>();
   for (const col of FLOW_COLS) {
     for (const cardId of board.columns[col]) {
       const c = board.cardsById[cardId];
       if (!c) continue;
       for (const aid of c.assigneeIds) {
-        if (aid) ids.add(aid);
+        if (aid) ids.add(resolveMemberIdFromToken(members, aid));
       }
     }
   }
@@ -94,21 +110,31 @@ export function KanbanBoard({
   board,
   members,
   params,
+  synergyByPair = {},
+  synergyPairBidirectional,
+  synergyDirected,
   onUpdateAssignees,
   onManualMoveCard,
   workFillPulse = null,
 }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const currency = t('financial.currencyCode');
   const wipLimit = useMemo(() => wipEffective(params, members), [params, members]);
 
   const [cardDrag, setCardDrag] = useState<{ cardId: string; fromColumn: ColumnId } | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<ColumnId | null>(null);
   const [assigneeDragActive, setAssigneeDragActive] = useState(false);
+  const synergy = useMemo(
+    () => ({
+      synergyByPair: ensureSynergyKeys(members, synergyByPair),
+      synergyPairBidirectional,
+      synergyDirected,
+    }),
+    [members, synergyByPair, synergyPairBidirectional, synergyDirected],
+  );
 
-  const idleMembers = useMemo(() => {
-    const busy = assigneeIdsInFlow(board);
-    return members.filter((m) => !busy.has(m.id));
-  }, [board, members]);
+  const busy = assigneeIdsInFlow(board, members);
+  const idleMembers = members.filter((m) => !busy.has(m.id));
 
   const clearAllDrags = useCallback(() => {
     setCardDrag(null);
@@ -118,12 +144,14 @@ export function KanbanBoard({
 
   const handleColumnDragOver = useCallback(
     (e: React.DragEvent, col: ColumnId) => {
-      e.preventDefault();
+      // Com arrasto de responsável ativo, não interceptar aqui: os slots dos cartões já
+      // fazem preventDefault + dropEffect 'copy'. Se definirmos 'none' no bubble da coluna,
+      // o navegador deixa de aceitar o drop nos slots (regressão).
       if (assigneeDragActive) {
-        e.dataTransfer.dropEffect = 'none';
         setDragOverColumn(null);
         return;
       }
+      e.preventDefault();
       if (!cardDrag) {
         e.dataTransfer.dropEffect = 'none';
         return;
@@ -169,7 +197,15 @@ export function KanbanBoard({
   }, []);
 
   return (
-    <div className="kanban-board-wrap">
+    <div className={`kanban-board-wrap${assigneeDragActive ? ' kanban-board-wrap--assignee-drag' : ''}`}>
+      <div className="kanban-assignee-guide" aria-label={t('kanban.assigneeHowTitle')}>
+        <p className="kanban-assignee-guide-title">{t('kanban.assigneeHowTitle')}</p>
+        <ol className="kanban-assignee-guide-steps">
+          <li>{t('kanban.assigneeHowStep1')}</li>
+          <li>{t('kanban.assigneeHowStep2')}</li>
+          <li>{t('kanban.assigneeHowStep3')}</li>
+        </ol>
+      </div>
       <div
         className="kanban-assignee-pool"
         onDragOver={handleAssigneePoolDragOver}
@@ -179,29 +215,33 @@ export function KanbanBoard({
           <span className="kanban-pool-label">{t('kanban.assigneePoolLabel')}</span>
           <span className="muted small kanban-pool-sublabel">{t('kanban.assigneePoolSublabel')}</span>
         </div>
-        <ul className="kanban-member-roster">
-          {members.map((m) => (
-            <li key={m.id}>
-              <button
-                type="button"
-                className="kanban-member-roster-chip"
-                draggable
-                onDragStart={(e) => {
-                  e.dataTransfer.setData(
-                    ASSIGNEE_DRAG_MIME,
-                    stringifyAssigneeDragPayload({ source: 'roster', memberId: m.id }),
-                  );
-                  e.dataTransfer.effectAllowed = 'copy';
-                  setAssigneeDragActive(true);
-                }}
-                onDragEnd={() => setAssigneeDragActive(false)}
-              >
-                {m.name}
-                <span className="kanban-member-roster-role">{t(`specialty.${m.specialty}`)}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
+        {idleMembers.length === 0 ? (
+          <span className="muted small">{t('kanban.assigneePoolEmpty')}</span>
+        ) : (
+          <ul className="kanban-member-roster">
+            {idleMembers.map((m) => (
+              <li key={m.id}>
+                <button
+                  type="button"
+                  className={`kanban-member-roster-chip ${specialtyToneClass(m.specialty)}`}
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData(
+                      ASSIGNEE_DRAG_MIME,
+                      stringifyAssigneeDragPayload({ source: 'roster', memberId: m.id }),
+                    );
+                    e.dataTransfer.effectAllowed = 'copy';
+                    setAssigneeDragActive(true);
+                  }}
+                  onDragEnd={() => setAssigneeDragActive(false)}
+                >
+                  {m.name}
+                  <span className="kanban-member-roster-role">{t(`specialty.${m.specialty}`)}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       <div className="kanban-idle-strip" aria-label={t('kanban.idleTitle')}>
@@ -211,7 +251,7 @@ export function KanbanBoard({
         ) : (
           <ul className="kanban-idle-chips">
             {idleMembers.map((m) => (
-              <li key={m.id} className="kanban-idle-chip">
+              <li key={m.id} className={`kanban-idle-chip ${specialtyToneClass(m.specialty)}`}>
                 <span className="kanban-idle-name">{m.name}</span>
                 <span className="kanban-idle-role">{t(`specialty.${m.specialty}`)}</span>
               </li>
@@ -244,7 +284,7 @@ export function KanbanBoard({
               <ul>
                 {board.columns[col].map((id) => {
                   const c = board.cardsById[id]!;
-                  const readOnlyAssignees = col === 'deploy';
+                  const readOnlyAssignees = col === 'deploy' || col === 'backlog';
                   const canDragCard = col !== 'deploy';
                   const dragBlockedByStage =
                     WIP_COLS.includes(col) && !canManuallyAdvanceCardFromColumn(c, col);
@@ -304,9 +344,7 @@ export function KanbanBoard({
                         <div className="card-meta card-meta-finance">
                           {(c.businessValue ?? 0) > 0 ? (
                             <span className="card-finance-value">
-                              {t('kanban.financeDollar', {
-                                v: (c.businessValue ?? 0).toLocaleString(),
-                              })}
+                              {formatMoney(c.businessValue ?? 0, i18n.language, currency)}
                             </span>
                           ) : null}
                           {c.dueGlobalDay != null ? (
@@ -325,6 +363,12 @@ export function KanbanBoard({
                           assigneeIds={c.assigneeIds}
                           members={members}
                           readOnly={readOnlyAssignees}
+                          card={c}
+                          columnId={col}
+                          board={board}
+                          params={params}
+                          synergy={synergy}
+                          dropTargetsActive={assigneeDragActive}
                           onApply={(next) => onUpdateAssignees(id, next)}
                           onAssigneeDragActiveChange={setAssigneeDragActive}
                         />

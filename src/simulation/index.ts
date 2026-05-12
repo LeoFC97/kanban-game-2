@@ -2,7 +2,6 @@ export * from './types';
 export { STORY_WORK_MULTIPLIER } from './storyScale';
 export * from './rng';
 export * from './synergy';
-export * from './traitsCatalog';
 export * from './memberModifiers';
 export * from './rolesCatalog';
 export * from './roleModifiers';
@@ -15,8 +14,15 @@ export {
   diceMaxForMember,
   ensureSynergyKeys,
   membersNotAssignedToAnyCard,
+  hasAnyCardOutsideBacklog,
   canManuallyAdvanceCardFromColumn,
   resolveAssigneesForCard,
+  normalizeAssigneeToken,
+  normalizedMemberKey,
+  resolveMemberIdFromToken,
+  resolveMemberFromToken,
+  normalizedDeliveryRange,
+  EFFECTIVE_DAILY_CAPACITY_MAX,
   type InteractiveRunner,
   type UpdateCardAssigneesResult,
 } from './engine';

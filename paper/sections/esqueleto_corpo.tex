@@ -1,125 +1,125 @@
 % ---------------------------------------------------------------------------
-% Corpo do esqueleto: substitua os blocos \textit{[...]} por parágrafos finais.
-% Labels alinhados ao artigo principal (sbpo2026.tex) para facilitar fusão.
+% Skeleton body: replace \textit{[...]} blocks with final paragraphs.
+% Labels match the main article (\texttt{sbpo2026.tex}) for easier merging.
 % ---------------------------------------------------------------------------
 
-\section{Introdução}
+\section{Introduction}
 \label{sec:introducao}
 
-\subsection{Contexto e problema}
-\textit{[Por que fluxo ágil + fatores humanos importam para PO / ensino / indústria. Referências iniciais: Kanban, Scrum, simulação.]}
+\subsection{Context and problem}
+\textit{[Why agile flow + human factors matter for OR, teaching, or industry. Opening citations: Kanban, Scrum, simulation.]}
 
-\subsection{Objetivo}
-\textit{[Uma frase objetiva + 2--3 subobjetivos mensuráveis ou de modelagem.]}
+\subsection{Objective}
+\textit{[One clear sentence + 2--3 measurable or modeling sub-goals.]}
 
-\subsection{Contribuições}
-\textit{[Lista numerada ou itemize: modelo; implementação; experimentos; reprodutibilidade. Evite ``contribuição original'' vago.]}
+\subsection{Contributions}
+\textit{[Numbered list or itemize: model; implementation; experiments; reproducibility. Avoid vague ``original contribution''.]}
 
-\subsection{Organização do artigo}
-\textit{[Parágrafo padrão: Sec.~\ref{sec:relacionados}--\ref{sec:conclusao} mapeiam seções.]}
+\subsection{Paper organization}
+\textit{[Standard paragraph: Sec.~\ref{sec:relacionados}--\ref{sec:conclusao} map to sections.]}
 
 % ---------------------------------------------------------------------------
-\section{Trabalhos relacionados}
+\section{Related work}
 \label{sec:relacionados}
 
-\subsection{Fluxo, Kanban e métricas de software}
-\textit{[Poppendieck, Anderson, métricas de fluxo, CFD se aplicável.]}
+\subsection{Flow, Kanban, and software metrics}
+\textit{[Poppendieck, Anderson, flow metrics, CFD if relevant.]}
 
-\subsection{Simulação e jogos sérios em engenharia de software}
-\textit{[Simuladores educacionais; DES; ABM se couber; lacuna vs.\ proposta.]}
+\subsection{Simulation and serious games in software engineering}
+\textit{[Educational simulators; DES; ABM if it fits; gap vs.\ this proposal.]}
 
-\subsection{Síntese e posicionamento}
-\textit{[Tabela opcional ``trabalho | foco | limitação''; onde este artigo se insere.]}
+\subsection{Synthesis and positioning}
+\textit{[Optional table ``work | focus | limitation''; where this paper fits.]}
 
 % ---------------------------------------------------------------------------
-\section{Descrição do sistema e modelo operacional}
+\section{System description and operational model}
 \label{sec:modelo}
 
-\subsection{Visão geral e entidades}
-\textit{[Membros, cartões, colunas, ordenação do fluxo. Figura opcional do quadro.]}
+\subsection{Overview and entities}
+\textit{[Members, cards, columns, flow order. Optional board figure.]}
 
-\subsection{Parâmetros globais}
-\textit{[Sprint, WIP, PRNG, coeficientes $\beta$, $\gamma$, etc.; referência à tabela de parâmetros quando existir.]}
+\subsection{Global parameters}
+\textit{[Sprint, WIP, PRNG, coefficients $\beta$, $\gamma$, etc.; pointer to parameter table when available.]}
 
-\subsection{Sinergia e traços}
-\textit{[Notação $s_{ij}$; catálogo de traços; remissão à Tabela~\ref{tab:tracos} no texto final.]}
+\subsection{Synergy and traits}
+\textit{[Notação $s_{ij}$; sinergia par a par; ver texto final do artigo.]}
 
-\subsection{Calendário e incremento de tempo}
-\textit{[Dia global, sprint, rito; o que muda a cada passo.]}
+\subsection{Calendar and time advance}
+\textit{[Global day, sprint, ceremony; what changes each step.]}
 
-\subsection{Planejamento e políticas de puxada}
-\textit{[Planning $\rightarrow$ análise; pull do backlog e limites WIP / $P_{\max}$.]}
+\subsection{Planning and pull policies}
+\textit{[Planning $\rightarrow$ analysis; backlog pull and WIP / $P_{\max}$ limits.]}
 
-\subsection{Capacidade diária e trabalho nas colunas}
-\textit{[Sorteio, especialista, papéis; gasto de capacidade por coluna.]}
+\subsection{Daily capacity and column work}
+\textit{[Dice draw, specialist, roles; capacity spend per column.]}
 
-\subsection{Colaboração em \texttt{dev} e handoffs}
-\textit{[Multiplicadores, clamp, retrabalho; equações principais sem implementação excessiva.]}
+\subsection{Collaboration in \texttt{dev} and handoffs}
+\textit{[Multipliers, clamp, rework; main equations without over-implementing.]}
 
-\subsection{Pseudo-código ou fluxograma (opcional)}
-\textit{[Remissão à Figura~\ref{fig:pseudo} quando incluída.]}
+\subsection{Pseudocode or flowchart (optional)}
+\textit{[Pointer to Figure~\ref{fig:pseudo} when included.]}
 
 % ---------------------------------------------------------------------------
-\section{Ritos Scrum no calendário}
+\section{Scrum ceremonies on the calendar}
 \label{sec:ritos}
 
-\subsection{Mapeamento rito $\leftrightarrow$ dia}
-\textit{[Tabela~\ref{tab:ritos}: planning, daily, review, retro.]}
+\subsection{Ceremony $\leftrightarrow$ day mapping}
+\textit{[Table~\ref{tab:ritos}: planning, daily, review, retro.]}
 
-\subsection{Efeitos no motor}
-\textit{[O que cada rito altera no estado; eventos aleatórios se houver.]}
+\subsection{Effects on the engine}
+\textit{[What each ceremony changes in state; random events if any.]}
 
 % ---------------------------------------------------------------------------
-\section{Arquitetura do protótipo e reprodutibilidade}
+\section{Prototype architecture and reproducibility}
 \label{sec:arquitetura}
 
-\subsection{Módulos e responsabilidades}
-\textit{[Motor, UI, exportação de logs; linguagem e repositório.]}
+\subsection{Modules and responsibilities}
+\textit{[Engine, UI, log export; language and repository.]}
 
-\subsection{Rastreabilidade texto--código}
-\textit{[Como nomes de tipos/funções aparecem no PDF; seed e JSON de resultado.]}
+\subsection{Text--code traceability}
+\textit{[How type/function names appear in the PDF; seed and result JSON.]}
 
-\subsection{Figura de fluxo (opcional)}
-\textit{[Figura~\ref{fig:fluxoQuadro}.]}
+\subsection{Flow figure (optional)}
+\textit{[Figure~\ref{fig:fluxoQuadro}.]}
 
 % ---------------------------------------------------------------------------
-\section{Desenho experimental}
+\section{Experimental design}
 \label{sec:experimentos}
 
-\subsection{Objetivo e hipóteses}
-\textit{[H1, H2, H3 operacionais; o que é mantido fixo vs.\ variado.]}
+\subsection{Objective and hypotheses}
+\textit{[Operational H1, H2, H3; what is fixed vs.\ varied.]}
 
-\subsection{Equipe, backlog e cenários A/B/C/D}
-\textit{[Descrição sucinta; remissão à Tabela~\ref{tab:param}.]}
+\subsection{Team, backlog, and scenarios A/B/C/D}
+\textit{[Short description; pointer to Table~\ref{tab:param}.]}
 
-\subsection{Métricas e protocolo de replicação}
-\textit{[CFD, cycle time, throughput; comando para regenerar figuras.]}
+\subsection{Metrics and replication protocol}
+\textit{[CFD, cycle time, throughput; command to regenerate figures.]}
 
 % ---------------------------------------------------------------------------
-\section{Resultados}
+\section{Results}
 \label{sec:resultados}
 
-\subsection{Séries temporais e CFD}
-\textit{[Figura~\ref{fig:cfdA} ou variantes por cenário.]}
+\subsection{Time series and CFD}
+\textit{[Figure~\ref{fig:cfdA} or per-scenario variants.]}
 
-\subsection{Tempo de ciclo e throughput}
-\textit{[Figura~\ref{fig:bar}, Figura~\ref{fig:tp}; Tabela~\ref{tab:resumoCenarios}.]}
+\subsection{Cycle time and throughput}
+\textit{[Figure~\ref{fig:bar}, Figure~\ref{fig:tp}; Table~\ref{tab:resumoCenarios}.]}
 
-\subsection{Leitura qualitativa}
-\textit{[2--4 frases ligando números às hipóteses; sem extrapolar além do desenho.]}
+\subsection{Qualitative reading}
+\textit{[2--4 sentences linking numbers to hypotheses; do not over-claim beyond the design.]}
 
 % ---------------------------------------------------------------------------
-\section{Discussão}
+\section{Discussion}
 \label{sec:discussao}
 
-\subsection{Limitações do modelo e dos experimentos}
-\textit{[Simplificações conscientes; ameaças à validade externa.]}
+\subsection{Model and experiment limitations}
+\textit{[Known simplifications; threats to external validity.]}
 
-\subsection{Trabalhos futuros}
-\textit{[Calibração com dados reais; mais traços; políticas alternativas.]}
+\subsection{Future work}
+\textit{[Calibration on real data; more traits; alternative policies.]}
 
 % ---------------------------------------------------------------------------
-\section{Conclusão}
+\section{Conclusion}
 \label{sec:conclusao}
 
-\textit{[Repetir problema + método + achado principal + contribuição; 1 parágrafo + opcional frase de encerramento.]}
+\textit{[Restate problem + method + main finding + contribution; one paragraph plus optional closing line.]}

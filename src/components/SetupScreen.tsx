@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import type { Card, GameConfig, Member, SimulationParams, Specialty, TaskKind } from '../simulation/types';
 import { mergeSpecialtyByTaskKind, TASK_KINDS } from '../simulation/taskKinds';
 import { JOB_ROLES } from '../simulation/rolesCatalog';
-import { TRAITS } from '../simulation/traitsCatalog';
 import { diceMaxForMember, ensureSynergyKeys, splitWork } from '../simulation/engine';
 import { STORY_WORK_MULTIPLIER } from '../simulation/storyScale';
 import { SynergyMatrix } from './SynergyMatrix';
@@ -302,7 +301,7 @@ export function SetupScreen({ value, onChange, onStart }: Props) {
                 value={m.jobRoleId ?? ''}
                 onChange={(e) => patchMember(i, { jobRoleId: e.target.value || undefined })}
               >
-                <option value="">{t('setup.traitNone')}</option>
+                <option value="">{t('setup.jobRoleNone')}</option>
                 {JOB_ROLES.map((r) => (
                   <option key={r.id} value={r.id}>
                     {t(`jobRoles.${r.id}.name`)}
@@ -343,43 +342,6 @@ export function SetupScreen({ value, onChange, onStart }: Props) {
                 />
               </div>
               <p className="trait-hint">{t('setup.deliveryHint')}</p>
-              <label>{t('setup.quality')}</label>
-              <select
-                className="input"
-                value={m.traitQualityId ?? ''}
-                onChange={(e) =>
-                  patchMember(i, { traitQualityId: e.target.value || undefined })
-                }
-              >
-                <option value="">{t('setup.traitNone')}</option>
-                {TRAITS.filter((tr) => tr.kind === 'quality').map((tr) => (
-                  <option key={tr.id} value={tr.id}>
-                    {t(`traits.${tr.id}.name`)}
-                  </option>
-                ))}
-              </select>
-              <label>{t('setup.flaw')}</label>
-              <select
-                className="input"
-                value={m.traitFlawId ?? ''}
-                onChange={(e) => patchMember(i, { traitFlawId: e.target.value || undefined })}
-              >
-                <option value="">{t('setup.traitNone')}</option>
-                {TRAITS.filter((tr) => tr.kind === 'flaw').map((tr) => (
-                  <option key={tr.id} value={tr.id}>
-                    {t(`traits.${tr.id}.name`)}
-                  </option>
-                ))}
-              </select>
-              <p className="trait-hint">
-                {m.traitQualityId && t(`traits.${m.traitQualityId}.gameEffect`)}
-                {m.traitFlawId && (
-                  <>
-                    <br />
-                    {t(`traits.${m.traitFlawId}.gameEffect`)}
-                  </>
-                )}
-              </p>
               <MemberSynergyPanel
                 self={m}
                 members={value.members}

@@ -71,10 +71,15 @@
   max-width: 52rem;
 }
 
-.setup-screen,
-.play-screen {
+.setup-screen {
   padding: 1.25rem 1.25rem 2.5rem;
   max-width: 1200px;
+  margin: 0 auto;
+}
+
+.play-screen {
+  padding: 1.1rem 1.1rem 2.2rem;
+  max-width: 1680px;
   margin: 0 auto;
 }
 
@@ -626,6 +631,22 @@
   max-height: min(92vh, 52rem);
 }
 
+.modal-panel--daily-events {
+  width: min(42rem, 100%);
+  max-height: min(88vh, 46rem);
+}
+
+.daily-events-catalog--embedded {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+}
+
+.daily-events-catalog--embedded .catalog-intro {
+  margin-top: 0;
+}
+
 .play-charts-modal-body {
   overflow-y: auto;
   padding: 0.75rem 1rem 1.25rem;
@@ -648,6 +669,8 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.2rem;
 }
 
 .kanban-idle-strip {
@@ -694,6 +717,21 @@
   font-size: 0.76rem;
 }
 
+.kanban-idle-chip.tone-analyst {
+  background: rgba(239, 68, 68, 0.14);
+  border-color: rgba(248, 113, 113, 0.35);
+}
+
+.kanban-idle-chip.tone-dev {
+  background: rgba(37, 99, 235, 0.16);
+  border-color: rgba(96, 165, 250, 0.35);
+}
+
+.kanban-idle-chip.tone-test {
+  background: rgba(22, 163, 74, 0.16);
+  border-color: rgba(74, 222, 128, 0.35);
+}
+
 .kanban-idle-name {
   font-weight: 600;
   color: #f1f5f9;
@@ -706,21 +744,22 @@
 
 .kanban-board {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  gap: 0.5rem;
+  grid-template-columns: repeat(5, minmax(220px, 1fr));
+  min-width: 1160px;
+  gap: 0.75rem;
 }
 
 .kanban-col {
   background: rgba(15, 23, 42, 0.55);
   border-radius: 10px;
-  padding: 0.5rem;
+  padding: 0.65rem;
   border: 1px solid rgba(148, 163, 184, 0.12);
-  min-height: 120px;
+  min-height: 140px;
 }
 
 .kanban-col h4 {
   margin: 0 0 0.35rem;
-  font-size: 0.78rem;
+  font-size: 0.86rem;
   color: #94a3b8;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -790,6 +829,60 @@
   font-weight: 400;
 }
 
+.kanban-assignee-guide {
+  margin-bottom: 0.65rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 10px;
+  border: 1px solid rgba(56, 189, 248, 0.22);
+  background: rgba(14, 116, 144, 0.12);
+}
+
+.kanban-assignee-guide-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #e0f2fe;
+}
+
+.kanban-assignee-guide-steps {
+  margin: 0;
+  padding-left: 1.15rem;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: #bae6fd;
+}
+
+.kanban-assignee-guide-steps li {
+  margin-bottom: 0.2rem;
+}
+
+.kanban-assignee-guide-steps li:last-child {
+  margin-bottom: 0;
+}
+
+.kanban-board-wrap--assignee-drag .kanban-assignee-pool {
+  border-color: rgba(56, 189, 248, 0.55);
+  background: rgba(14, 165, 233, 0.08);
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.15);
+}
+
+.kanban-board-wrap--assignee-drag .kanban-member-roster-chip {
+  border-color: rgba(56, 189, 248, 0.45);
+}
+
+@keyframes assignee-slot-pulse {
+  50% {
+    border-color: rgba(56, 189, 248, 0.85);
+    box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
+  }
+}
+
+.assignee-drop-slot--pulse-target {
+  animation: assignee-slot-pulse 1.1s ease-in-out infinite;
+  border-style: solid;
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
 .kanban-assignee-pool {
   margin-bottom: 0.75rem;
   padding: 0.55rem 0.65rem;
@@ -838,6 +931,24 @@
   font-size: 0.78rem;
   font-weight: 600;
   font-family: inherit;
+}
+
+.kanban-member-roster-chip.tone-analyst {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(248, 113, 113, 0.42);
+  color: #fee2e2;
+}
+
+.kanban-member-roster-chip.tone-dev {
+  background: rgba(37, 99, 235, 0.2);
+  border-color: rgba(96, 165, 250, 0.42);
+  color: #dbeafe;
+}
+
+.kanban-member-roster-chip.tone-test {
+  background: rgba(22, 163, 74, 0.2);
+  border-color: rgba(74, 222, 128, 0.42);
+  color: #dcfce7;
 }
 
 .kanban-member-roster-chip:active {
@@ -891,12 +1002,82 @@
   font-weight: 600;
 }
 
+.assignee-chip.tone-analyst {
+  background: rgba(239, 68, 68, 0.18);
+  color: #fecaca;
+}
+
+.assignee-chip.tone-dev {
+  background: rgba(37, 99, 235, 0.2);
+  color: #bfdbfe;
+}
+
+.assignee-chip.tone-test {
+  background: rgba(22, 163, 74, 0.2);
+  color: #bbf7d0;
+}
+
 .assignee-chip-draggable {
   cursor: grab;
 }
 
 .assignee-chip-draggable:active {
   cursor: grabbing;
+}
+
+.assignee-chip-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.assignee-formula-tooltip {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 0.45rem);
+  z-index: 24;
+  width: min(28rem, 82vw);
+  padding: 0.55rem 0.6rem;
+  border-radius: 10px;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  background:
+    radial-gradient(100% 140% at 0% 0%, rgba(56, 189, 248, 0.1), rgba(15, 23, 42, 0) 40%),
+    rgba(15, 23, 42, 0.96);
+  box-shadow: 0 12px 34px rgba(2, 6, 23, 0.65);
+  color: #e2e8f0;
+  font-size: 0.74rem;
+  line-height: 1.35;
+  pointer-events: none;
+}
+
+.assignee-formula-title {
+  margin: 0 0 0.25rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.assignee-formula-line {
+  margin: 0.08rem 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.assignee-formula-note {
+  color: #93c5fd;
+}
+
+.assignee-formula-range {
+  margin: 0.35rem 0 0.12rem;
+  font-weight: 650;
+  color: #bae6fd;
+  font-variant-numeric: tabular-nums;
+}
+
+.assignee-formula-foot {
+  margin: 0.08rem 0 0;
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  color: #94a3b8;
 }
 
 .setup-assignee-pool {
@@ -906,9 +1087,9 @@
 .kanban-card {
   background: rgba(51, 65, 85, 0.5);
   border-radius: 8px;
-  padding: 0.35rem 0.45rem;
+  padding: 0.45rem 0.55rem;
   margin-bottom: 0.35rem;
-  font-size: 0.78rem;
+  font-size: 0.84rem;
 }
 
 .card-title-row {
@@ -1075,7 +1256,48 @@
     border-color 0.2s ease,
     box-shadow 0.2s ease,
     transform 0.2s ease;
-  transition-delay: calc(var(--gi, 0) * 18ms);
+}
+
+/* Quadrados que acabam de ganhar progresso no dia: “pop” curto (passo a passo vem do React). */
+.card-task-block-new-fill {
+  animation: card-task-block-fill-pop 0.34s cubic-bezier(0.34, 1.35, 0.55, 1) both;
+}
+
+@keyframes card-task-block-fill-pop {
+  0% {
+    transform: scale(0.82);
+    filter: brightness(1.25);
+  }
+  70% {
+    transform: scale(1.14);
+    filter: brightness(1.08);
+  }
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+}
+
+.card-task-block-filled.card-task-block--deploy.card-task-block-new-fill {
+  animation-name: card-task-block-fill-pop-deploy;
+  animation-timing-function: cubic-bezier(0.34, 1.35, 0.55, 1);
+}
+
+@keyframes card-task-block-fill-pop-deploy {
+  0% {
+    transform: scale(0.88);
+    filter: brightness(1.2);
+  }
+  100% {
+    transform: scale(1.05);
+    filter: brightness(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-task-block-new-fill {
+    animation: none;
+  }
 }
 
 .card-task-block--analysis {
@@ -1131,6 +1353,70 @@
   font-size: 0.82rem;
 }
 
+.stage-color-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.7rem;
+  margin: 0 0 0.65rem;
+  padding: 0.42rem 0.55rem;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: rgba(15, 23, 42, 0.35);
+  font-size: 0.78rem;
+}
+
+.stage-color-legend-title {
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+.stage-color-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #cbd5e1;
+}
+
+.stage-color-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  flex-shrink: 0;
+}
+
+.stage-color-dot--analysis {
+  background: #ef4444;
+  border-color: rgba(248, 113, 113, 0.9);
+}
+
+.stage-color-dot--dev {
+  background: #2563eb;
+  border-color: rgba(96, 165, 250, 0.9);
+}
+
+.stage-color-dot--test {
+  background: #16a34a;
+  border-color: rgba(74, 222, 128, 0.9);
+}
+
+.stage-color-dot--deploy {
+  background: #f59e0b;
+  border-color: rgba(251, 191, 36, 0.92);
+}
+
+.work-anim-banner {
+  margin-bottom: 0.7rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 10px;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  background: rgba(14, 165, 233, 0.14);
+  color: #e0f2fe;
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+
 .assignee-error-banner {
   margin: 0 0 0.5rem;
   padding: 0.45rem 0.6rem;
@@ -1152,6 +1438,16 @@
   font-weight: 400;
   color: #fecdd3;
   line-height: 1.35;
+}
+
+.assignee-warning-banner {
+  color: #fde68a;
+  background: rgba(120, 53, 15, 0.35);
+  border-color: rgba(251, 191, 36, 0.45);
+}
+
+.assignee-warning-banner .allocation-banner-hint {
+  color: #fef3c7;
 }
 
 .kanban-card .card-assignees {
@@ -1382,6 +1678,16 @@
   display: flex;
   gap: 0.35rem;
   align-items: baseline;
+}
+
+.day-modal-work-intro {
+  margin: 0 0 0.5rem;
+}
+
+.day-modal-work-table .narrow-num {
+  text-align: right;
+  width: 6.5rem;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Catálogo de eventos aleatórios */

@@ -1,15 +1,44 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { COLUMN_ORDER, type DayLog, type Member } from '../simulation/types';
+import {
+  COLUMN_ORDER,
+  type BoardCard,
+  type DayLog,
+  type Member,
+  type MemberCardWorkDelivery,
+} from '../simulation/types';
 import { formatLogNote } from '../i18n/formatLogNote';
 
 type Props = {
   log: DayLog;
   members: Member[];
+  cardsById: Record<string, BoardCard>;
   onClose: () => void;
 };
 
-export function DaySummaryModal({ log, members, onClose }: Props) {
+function aggregateDeliveries(
+  deliveries: MemberCardWorkDelivery[],
+): Map<string, { memberId: string; cardId: string; points: number }> {
+  const m = new Map<string, { memberId: string; cardId: string; points: number }>();
+  for (const d of deliveries) {
+    const k = `${d.memberId}::${d.cardId}`;
+    const prev = m.get(k);
+    m.set(k, {
+      memberId: d.memberId,
+      cardId: d.cardId,
+      points: (prev?.points ?? 0) + d.storyPoints,
+    });
+  }
+  return m;
+}
+
+function formatStoryPtsDay(x: number): string {
+  const r = Math.round(x * 100) / 100;
+  if (Number.isInteger(r)) return String(r);
+  return r.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
+}
+
+export function DaySummaryModal({ log, members, cardsById, onClose }: Props) {
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -26,6 +55,21 @@ export function DaySummaryModal({ log, members, onClose }: Props) {
     log.capacityBreakdownByMemberId &&
     Object.keys(log.capacityBreakdownByMemberId).length > 0
   );
+
+  const deliveryRows = useMemo(() => {
+    const w = log.workDeliveries ?? [];
+    if (w.length === 0) return [] as { memberId: string; cardId: string; points: number }[];
+    const agg = aggregateDeliveries(w);
+    const arr = [...agg.values()].filter((r) => r.points > 1e-9);
+    const mName = (id: string) => memberById(id)?.name ?? id;
+    const cTitle = (id: string) => cardsById[id]?.title ?? id;
+    arr.sort((a, b) => {
+      const na = mName(a.memberId).localeCompare(mName(b.memberId), undefined, { sensitivity: 'base' });
+      if (na !== 0) return na;
+      return cTitle(a.cardId).localeCompare(cTitle(b.cardId), undefined, { sensitivity: 'base' });
+    });
+    return arr;
+  }, [log.workDeliveries, members, cardsById]);
 
   return (
     <div
@@ -148,6 +192,37 @@ export function DaySummaryModal({ log, members, onClose }: Props) {
                 </div>
               </section>
             )}
+
+          {(log.ceremony === 'daily_scrum' || log.ceremony === 'sprint_review') && (
+            <section className="day-modal-section">
+              <h3>{t('play.dayModal.workByTaskTitle')}</h3>
+              <p className="muted small day-modal-work-intro">{t('play.dayModal.workByTaskIntro')}</p>
+              {deliveryRows.length === 0 ? (
+                <p className="muted">{t('play.dayModal.noWorkDeliveries')}</p>
+              ) : (
+                <div className="day-modal-table-wrap">
+                  <table className="day-modal-table day-modal-work-table">
+                    <thead>
+                      <tr>
+                        <th>{t('play.dayModal.colMember')}</th>
+                        <th>{t('play.dayModal.colTask')}</th>
+                        <th className="narrow-num">{t('play.dayModal.colStoryPtsDay')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {deliveryRows.map((row) => (
+                        <tr key={`${row.memberId}-${row.cardId}`}>
+                          <td>{memberById(row.memberId)?.name ?? row.memberId}</td>
+                          <td>{cardsById[row.cardId]?.title ?? row.cardId}</td>
+                          <td className="narrow-num">{formatStoryPtsDay(row.points)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </section>
+          )}
 
           <section className="day-modal-section">
             <h3>{t('play.dayModal.boardTitle')}</h3>

@@ -1,13 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { BoardCard, ColumnId } from '../simulation/types';
 import {
+  WORK_FILL_MS_PER_BLOCK,
   blockCountForStage,
+  buildStageBlockFilledMask,
   completedWorkFraction,
-  filledBlocksInRow,
-  sequentialConsumedAtFraction,
 } from '../simulation/cardProgress';
-
-const ANIM_MS = 720;
 
 type Pulse = { from: number; to: number };
 
@@ -35,34 +33,77 @@ function stageVariant(key: StageKey): string {
 }
 
 export function CardTaskStageBlocks({ card, columnId, pulse }: Props) {
-  const targetFrac =
-    card.points <= 0 ? 0 : completedWorkFraction(card, columnId, card.remainingInStage);
-  const [animFrac, setAnimFrac] = useState<number | null>(null);
+  const [revealedNewBlocks, setRevealedNewBlocks] = useState(0);
+
+  // #32: targetFrac só é usado no caminho sem pulse — calculado lazy no displayMask.
+  // Mantemos uma referência única aqui para passar a buildStageBlockFilledMask.
+
+  // #30: para a máscara "antes do pulse", o bit de deploy deve vir só da fração
+  // (não da `columnId` atual). Se o cartão acabou de chegar em Deploy neste step,
+  // `columnId === 'deploy'` mas `pulse.from < 1` — passando uma coluna não-deploy
+  // como "âncora" para o cálculo, o bit de deploy fica `f >= 1 - 1e-9` corretamente.
+  const startMaskWhenPulse = useMemo(() => {
+    if (!pulse || card.points <= 0) return null;
+    return buildStageBlockFilledMask(card, 'analise', pulse.from);
+  }, [pulse, card]);
+
+  const newBlockIndices = useMemo(() => {
+    if (!pulse || card.points <= 0) return [] as number[];
+    const startMask = buildStageBlockFilledMask(card, 'analise', pulse.from);
+    const endMask = buildStageBlockFilledMask(card, columnId, pulse.to);
+    const out: number[] = [];
+    for (let i = 0; i < endMask.length; i++) {
+      if (endMask[i] && !startMask[i]) out.push(i);
+    }
+    return out;
+  }, [pulse, card, columnId]);
 
   useEffect(() => {
-    if (!pulse) return;
+    if (!pulse || card.points <= 0) {
+      setRevealedNewBlocks(0);
+      return;
+    }
+    if (newBlockIndices.length === 0) {
+      setRevealedNewBlocks(0);
+      return;
+    }
+
+    setRevealedNewBlocks(0);
     let cancelled = false;
-    const rafRef = { id: 0 };
-    const start = performance.now();
-    const from = pulse.from;
-    const delta = pulse.to - pulse.from;
+    let raf = 0;
+    const t0 = performance.now();
 
     const tick = (now: number) => {
       if (cancelled) return;
-      const u = Math.min(1, (now - start) / ANIM_MS);
-      const ease = 1 - (1 - u) * (1 - u);
-      setAnimFrac(from + delta * ease);
-      if (u < 1) rafRef.id = requestAnimationFrame(tick);
+      const n = Math.min(newBlockIndices.length, Math.floor((now - t0) / WORK_FILL_MS_PER_BLOCK));
+      setRevealedNewBlocks(n);
+      if (n < newBlockIndices.length) {
+        raf = requestAnimationFrame(tick);
+      }
     };
-    rafRef.id = requestAnimationFrame(tick);
+    raf = requestAnimationFrame(tick);
     return () => {
       cancelled = true;
-      cancelAnimationFrame(rafRef.id);
-      setAnimFrac(null);
+      cancelAnimationFrame(raf);
+      setRevealedNewBlocks(0);
     };
-  }, [pulse, pulse?.from, pulse?.to]);
+  }, [pulse, pulse?.from, pulse?.to, newBlockIndices, card.points]);
 
-  const displayFrac = pulse != null ? (animFrac ?? pulse.from) : targetFrac;
+  const displayMask = useMemo(() => {
+    if (card.points <= 0) return [] as boolean[];
+    if (!pulse) {
+      // #32: só calcula a fração quando não há pulse animando o passo do dia.
+      const targetFrac = completedWorkFraction(card, columnId, card.remainingInStage);
+      return buildStageBlockFilledMask(card, columnId, targetFrac);
+    }
+    const startMask = buildStageBlockFilledMask(card, 'analise', pulse.from);
+    const m = [...startMask];
+    for (let k = 0; k < revealedNewBlocks; k++) {
+      const ix = newBlockIndices[k];
+      if (ix !== undefined) m[ix] = true;
+    }
+    return m;
+  }, [card, columnId, pulse, newBlockIndices, revealedNewBlocks]);
 
   if (card.points <= 0) return null;
 
@@ -71,42 +112,36 @@ export function CardTaskStageBlocks({ card, columnId, pulse }: Props) {
   const nT = blockCountForStage(card.workTeste);
   const nDep = 1;
 
-  const seq = sequentialConsumedAtFraction(card, displayFrac);
-  const filledA = filledBlocksInRow(seq.analysis, card.workAnalise, nA);
-  const filledD = filledBlocksInRow(seq.dev, card.workDev, nD);
-  const filledT = filledBlocksInRow(seq.test, card.workTeste, nT);
-  const deployFilled = displayFrac >= 1 - 1e-9 || columnId === 'deploy';
-
-  const rows: { key: StageKey; count: number; filled: number }[] = [
-    { key: 'analysis', count: nA, filled: filledA },
-    { key: 'dev', count: nD, filled: filledD },
-    { key: 'test', count: nT, filled: filledT },
-    { key: 'deploy', count: nDep, filled: deployFilled ? 1 : 0 },
+  const rows: { key: StageKey; count: number }[] = [
+    { key: 'analysis', count: nA },
+    { key: 'dev', count: nD },
+    { key: 'test', count: nT },
+    { key: 'deploy', count: nDep },
   ];
 
-  let slotBase = 0;
+  let gi = 0;
 
   return (
     <div className="card-task-stages" aria-hidden>
-      {rows.map((row) => {
-        const base = slotBase;
-        slotBase += row.count;
-        return (
-          <div key={row.key} className="card-task-stage-row">
-            {Array.from({ length: row.count }, (_, j) => {
-              const gi = base + j;
-              const filled = j < row.filled;
-              return (
-                <span
-                  key={`${row.key}-${j}`}
-                  className={`card-task-block ${stageVariant(row.key)}${filled ? ' card-task-block-filled' : ''}`}
-                  style={{ ['--gi' as string]: gi }}
-                />
-              );
-            })}
-          </div>
-        );
-      })}
+      {rows.map((row) => (
+        <div key={row.key} className="card-task-stage-row">
+          {Array.from({ length: row.count }, (_, j) => {
+            const idx = gi++;
+            const filled = displayMask[idx] ?? false;
+            const wasFilledStart = startMaskWhenPulse ? (startMaskWhenPulse[idx] ?? false) : false;
+            const isNewFill = Boolean(pulse && filled && startMaskWhenPulse && !wasFilledStart);
+            // #33: a key inclui `filled` deliberadamente para forçar remount do <span>
+            // quando o bloco passa de vazio → preenchido, re-disparando a animação CSS
+            // `card-task-block-new-fill`. Não use uma key estável aqui sem revisar o CSS.
+            return (
+              <span
+                key={`${row.key}-${j}-${filled ? 1 : 0}`}
+                className={`card-task-block ${stageVariant(row.key)}${filled ? ' card-task-block-filled' : ''}${isNewFill ? ' card-task-block-new-fill' : ''}`}
+              />
+            );
+          })}
+        </div>
+      ))}
     </div>
   );
 }

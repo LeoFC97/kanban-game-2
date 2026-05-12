@@ -1,7 +1,7 @@
 [
   {
     "id": "A_baseline",
-    "title": "A — Linha de base",
+    "title": "A — Referência",
     "completed": 7,
     "meanCycleTime": 1.8571428571428572,
     "medianCycleTime": 2,
@@ -11,7 +11,7 @@
   },
   {
     "id": "B_collab_synergy",
-    "title": "B — Sinergia positiva entre os desenvolvedores",
+    "title": "B — Sinergia positiva entre desenvolvedores",
     "completed": 7,
     "meanCycleTime": 1.7142857142857142,
     "medianCycleTime": 2,
@@ -21,7 +21,7 @@
   },
   {
     "id": "C_handoff_synergy",
-    "title": "C — Sinergia negativa no handoff entre analista e desenvolvedor principal",
+    "title": "C — Sinergia negativa no repasse analista–desenvolvedor líder",
     "completed": 7,
     "meanCycleTime": 2.4285714285714284,
     "medianCycleTime": 2,
@@ -30,8 +30,8 @@
     }
   },
   {
-    "id": "D_trait_hiperfoco",
-    "title": "D — Defeito Hiperfoco no desenvolvedor principal",
+    "id": "D_sinergia_combinada",
+    "title": "D — Sinergia positiva no par de dev e negativa no repasse analista–líder",
     "completed": 7,
     "meanCycleTime": 1.8571428571428572,
     "medianCycleTime": 2,

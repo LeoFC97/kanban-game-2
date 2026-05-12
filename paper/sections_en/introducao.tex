@@ -1,0 +1,18 @@
+\section{Introduction}
+
+Software development flows combine work queues, pull policies, and planning cadences~\cite{poppendieck2003lean,anderson2010kanban}. In agile contexts, Kanban- and Scrum-inspired practices coexist: a visual board organizes work, while ceremonies structure the calendar and transparency of progress~\cite{schwaber2002agile}. From an operations-research perspective, this arrangement suggests a stochastic system with queues, service policies, and calendar events; however, it remains difficult to convey, in classrooms or exploratory studies, how \emph{peer relations}---summarized here by synergy---interact with capacity variability and operational bottlenecks.
+
+Commercial educational simulators such as the \emph{Kanban Simulator}~\cite{kanbanSimulator} have made daily variability and specialization intuitive. For research and advanced teaching, one wants a model that is \textbf{stated in equations and parameters}, \textbf{reproducible}, and \textbf{separable}: it should be possible to isolate the effect of synergy between two developers on a collaborative card without, at the same time, changing the backlog, the random seed, or the WIP policy.
+
+\textbf{Objective.} To formalize and present a transparent simulation engine that combines (i) daily Kanban flow, (ii) a simplified Scrum cadence, and (iii) interpersonal synergy in same-stage collaboration and in handoffs between stages, enabling reproducible A/B experiments. The narrative highlights, in Section~\ref{sec:modelo}, the \textbf{main approach differences} between a reading \emph{without} synergies ($s_{ij}\equiv 0$: pair-neutral core) and a reading \emph{with} synergies (matrix $S$ coupled to collaboration, handoff, and rework).
+
+\textbf{Contributions.}
+\begin{itemize}
+  \item \textbf{Explicit operational model:} discrete time, flow columns, per-member capacity with a random component and specialist bonus, FIFO queues in work columns, and stage-to-stage advancement with handoffs and rework.
+  \item \textbf{Synergy as a controlled factor:} a symmetric matrix $s_{ij}\in[-1,1]$ enters multipliers with \emph{clamping} in collaborative \texttt{dev} work and in handoffs between stages.
+  \item \textbf{Scrum calendar coupled to the engine:} planning, working days, review, and retrospective (the latter, in the prototype, only as an end-of-sprint marker).
+  \item \textbf{Minimal experimental package:} same seed and backlog while varying only pairwise synergy patterns, with automatic export of metrics and figures.
+  \item \textbf{Open-source software artifact:} a web application (React/Vite) on top of the TypeScript engine, internationalization, interactive play with assignee edits aligned to the engine, allocation validation, visualizations (CFD, cycle time, pedagogical financial report), and the \texttt{npm run paper:figures} script that materializes article figures from the repository.
+\end{itemize}
+
+\textbf{Organization.} Section~\ref{sec:relacionados} positions related work. Section~\ref{sec:modelo} describes the system, notation, and daily algorithm. Section~\ref{sec:ritos} ties ceremonies to the calendar. Section~\ref{sec:arquitetura} summarizes the prototype architecture and a visual flow. Sections~\ref{sec:experimentos} and~\ref{sec:resultados} present experiments and illustrative results. Section~\ref{sec:discussao} discusses limitations and Section~\ref{sec:conclusao} concludes.

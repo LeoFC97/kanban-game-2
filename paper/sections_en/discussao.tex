@@ -1,0 +1,14 @@
+\section{Discussion and limitations}
+\label{sec:discussao}
+
+\paragraph{Interpretation.}
+Results in Section~\ref{sec:resultados} should not be read as ``truths'' about real teams: they show \textbf{sensitive behavior} to the engine's explicit rules under a minimal experimental design. Recall the distinction in Section~\ref{sec:sinergia-neutral-vs}: relative to the reading with $S\equiv 0$, introducing synergies does not change the purpose of the game (FIFO, WIP, and capacity draws remain), but \textbf{relocates} part of flow variability onto explicit pairs and onto collaboration/handoff mechanisms. In particular, negative handoff synergy (scenario C) combines the handoff multiplier with higher rework propensity, while positive synergy on the collaborative pair (scenario B) amplifies effective work only in column \texttt{dev} for collaborative cards. Scenario D illustrates combining both channels of $S$, reinforcing the need for broader experimental designs when the goal is precise magnitude estimation.
+
+\paragraph{Reproducibility and transparency.}
+Keeping the engine in pure TypeScript and versioning together (i) parameters, (ii) scenarios, (iii) article export scripts, and (iv) the web app that consumes the same \texttt{src/simulation} package reduces ambiguity about ``what was simulated''. Future work should publish \emph{releases} with \texttt{package-lock.json} (or equivalent) and a commit identifier when reproducing numbers in articles or teaching materials.
+
+\paragraph{Limitations.}
+The model is reductive: no learning, no parallel defect queues, no mid-sprint priority changes, and retrospective does not change parameters. Synergy $s_{ij}$ is a pairwise scalar summary.
+
+\paragraph{Validation.}
+We do not report empirical validation with real project data; that is a natural next step (calibration of $\beta$ and $\gamma$).

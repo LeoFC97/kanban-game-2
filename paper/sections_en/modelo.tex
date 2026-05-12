@@ -1,0 +1,113 @@
+\section{System description and operational model}
+\label{sec:modelo}
+
+\subsection{Overview}
+We consider a finite set of \textbf{members} $\mathcal{M}$, each with specialty in $\{\text{Analyst},\text{Developer},\text{Tester}\}$, and a set of \textbf{cards} (\emph{stories}) with story points $p\in\mathbb{N}$. After the \texttt{backlog} queue, the four work stages follow necessarily in this order:
+\[
+\texttt{backlog}\rightarrow\texttt{analise}\rightarrow\texttt{dev}\rightarrow\texttt{teste}\rightarrow\texttt{deploy}.
+\]
+Each card with points $p$ has remaining work per stage $(w^A,w^D,w^T)$ from a fixed partitioning rule of roughly $30\%/50\%/20\%$ of $p$, with integer rounding and strictly positive components (implementation: \texttt{splitWork} in the source code).
+
+\subsection{Global parameters}
+Beyond the backlog and team, the model uses aggregate parameters (all auditable in type \texttt{SimulationParams}): working days per sprint $D$, number of sprints $K$, PRNG seed $\sigma$, WIP limit per work column $W$, planning pull cap from backlog into \texttt{analise} $P_{\max}$, coefficients $\beta$ (collaboration) and $\gamma$ (handoff), \emph{clamp} bounds for collaboration and handoff multipliers, threshold $s^\star$ controlling rework probability on unfavorable handoffs, and rework units $u_R$.
+
+\subsection{Synergy between members}
+For each unordered pair $\{i,j\}\subset\mathcal{M}$, define $s_{ij}=s_{ji}\in[-1,1]$ (default $0$ if missing). Positive values represent mutual facilitation; negative values represent friction. The matrix enters explicitly into collaboration multipliers (in \texttt{dev}, for cards with several assignees) and handoff multipliers between stages, as well as the stochastic rework component tied to unfavorable handoffs (handoff subsection below). Optional job roles (e.g.\ Scrum Master) may reduce handoff rework probability for the whole team, independently of $S$.
+
+\subsection{Approach without synergies \emph{versus} with synergies}
+\label{sec:sinergia-neutral-vs}
+
+The engine supports two operational readings that share \textbf{the same core} (discrete time, columns, random capacity, FIFO, WIP, handoff, and rework), differing in the role of the symmetric matrix $S=(s_{ij})$.
+
+\paragraph{Reading \emph{without} interpersonal synergies.}
+Set $s_{ij}=0$ for every pair $\{i,j\}$. Daily capacity draws, the allocation policy, WIP limits, per-stage point splitting, and the specialist bonus remain unchanged. On collaborative cards in \texttt{dev}, the collaboration multiplier reduces to $\mathrm{clip}(1,\ldots)=1$ without the $\beta\,s_{ab}$ term. On handoffs, $M^{\text{hand}}=\mathrm{clip}(1,\ldots)=1$ without $\gamma\,s_{oi}$. Handoff rework probability from low synergy vanishes when $s_{oi}\ge s^\star$; with $s_{oi}\equiv 0$, rework behavior is homogeneous across pairs. \textbf{All pairs are equivalent} with respect to $S$: one cannot distinguish ``this pair collaborates better'' without nonzero synergies or other parameter tweaks.
+
+\paragraph{Reading \emph{with} synergies.}
+Reintroduce $s_{ij}\in[-1,1]$ as an explicit summary of facilitation ($s>0$) or friction ($s<0$) between members $i$ and $j$. Then: (i) on collaborative \texttt{dev}, $\beta\,s_{ab}$ modulates effective work consumed per unit of raw capacity; (ii) on handoffs between specialties, $\gamma\,s_{oi}$ enters $M^{\text{hand}}$ and, together with $\mathbb{I}\{s_{oi}<s^\star\}$, changes rework propensity when the pair is ``unfavorable'' relative to the global threshold. Thus the \textbf{main approach differences} versus the neutral reading are: \emph{(a)} \textbf{pairwise} parametrization (not only per individual); \emph{(b)} direct coupling between peer relation and local throughput under collaboration; \emph{(c)} coupling between relation on handoff, inflation of initial work in the next stage, and rework risk.
+
+\paragraph{Pedagogical and experimental use.}
+With backlog, seed, and policy fixed, scenario~A in Section~\ref{sec:experimentos} illustrates the reading \emph{without} synergies; scenarios~B and~C isolate, respectively, positive synergy on a collaborative pair and negative synergy on a critical handoff; scenario~D combines both. Thus one discusses flow-metric sensitivity \textbf{solely} through $S$, without changing total work.
+
+\subsection{Calendar and time advance}
+Time advances in \textbf{global days} $t=1,2,\dots$. Each day belongs to a sprint $k$ and a day-in-sprint index $d\in\{1,\dots,D\}$, plus a ceremony (Section~\ref{sec:ritos}). The state includes per-column queues and, for each card in a work stage, the remaining work $\textit{rem}$ in the current stage.
+
+\subsection{Planning (pull into \texttt{analise})}
+On \emph{Sprint Planning} day, we repeat up to $P_{\max}$ times: if a card exists in \texttt{backlog}, if $|\texttt{analise}|<W'$ and a planning pull counter $n$ is still below $P_{\max}$, move the front card of \texttt{backlog} to the end of \texttt{analise} (with initial load for the analysis stage). Then, while $P_{\max}>0$, $|\texttt{analise}|<W'$ and \texttt{backlog} is nonempty, pull cards from \texttt{backlog} into \texttt{analise} up to $W'$, with $W'$ equal to the global WIP parameter. If $P_{\max}=0$, there are no automatic pulls from \texttt{backlog} on working days; entry into \texttt{analise} is manual in the UI.
+
+\subsection{Daily capacity per member}
+For each member $m$ on a working day, draw an integer uniformly
+\[
+X_m \sim \mathcal{U}\{1,\dots,D^{\max}_m\},\qquad
+D^{\max}_m = \mathrm{clip}\big(6+\Delta^{\text{dice}}_m,\,2,\,8\big),
+\]
+where $\Delta^{\text{dice}}_m$ and $\Delta^{\text{spec}}_m$ are zero in this version (no per-capita adjustments beyond the configurable delivery range). Let $h_m\in\{\texttt{analise},\texttt{dev},\texttt{teste}\}$ be $m$'s specialty column. If there is positive remaining work in $h_m$, define raw capacity
+\[
+C_m = \min\left\{12,\left\lfloor X_m \cdot \rho_m + \tfrac{1}{2}\right\rfloor\right\},
+\quad
+\rho_m = \mathrm{clip}\big(2+\Delta^{\text{spec}}_m,\,1.25,\,3.5\big),
+\]
+otherwise $C_m=X_m$. The value $C_m$ is the \textbf{raw capacity} applicable to work columns.
+
+\subsection{Capacity allocation policy}
+For each member $m$ in fixed team order, initialize $L\leftarrow C_m$. First, if specialty $h_m$ has cards with $\textit{rem}>0$, apply procedure \textsc{Spend} on $h_m$ (below). Then, for each work column in order $(\texttt{analise},\texttt{dev},\texttt{teste})$, while $L>0$, apply \textsc{Spend}.
+
+\paragraph{Procedure \textsc{Spend} on column $h$.}
+Traverse the queue of $h$ in FIFO order. For each card with $\textit{rem}>0$, define the collaboration multiplier
+\[
+M^{\text{col}} =
+\begin{cases}
+\mathrm{clip}\big(1+\beta\, s_{ab} + T^{\text{col}}_{ab},\,E^{\min}_{\text{col}},\,E^{\max}_{\text{col}}\big), & \text{if collaborative with assignees }a,b,\\
+1, & \text{otherwise},
+\end{cases}
+\]
+where $T^{\text{col}}_{ab}=0$ in this version (no additive terms beyond $\beta\,s_{ab}$). In column \texttt{dev} only, effective work consumed per raw unit is multiplied by $M^{\text{col}}$; elsewhere $M^{\text{col}}=1$. Given raw budget $L$, for a card with remainder $\textit{rem}$, the maximum applicable raw units is $\textit{rem}/M^{\text{col}}$ in \texttt{dev} (and $\textit{rem}$ in other columns). Consume $\delta=\min\{L,\textit{rem}/M^{\text{col}}\}$ (with the convention above), reducing $\textit{rem}\leftarrow \textit{rem}-\delta M^{\text{col}}$ in \texttt{dev} (and $\textit{rem}-\delta$ elsewhere). If $\textit{rem}$ hits zero, try to advance the card.
+
+\subsection{Column advancement, handoff, and rework}
+When advancing from work column $h$ to the next, let $o$ and $i$ be the inferred ``donor'' and ``receiver'' members from column specialties (with fallback rules for assignees and minimal team). Define
+\[
+M^{\text{hand}} = \mathrm{clip}\big(1+\gamma\, s_{oi} + T^{\text{hand}}_{oi},\,H^{\min},\,H^{\max}\big),
+\]
+with $T^{\text{hand}}=0$ in this version. With probability
+\[
+\pi_R = \mathrm{clip}\Big(\mathbb{I}\{s_{oi}<s^\star\}\cdot\big(0.06+(s^\star-s_{oi})\,0.22\big) + \Delta^{\text{rw}}_o+\Delta^{\text{rw}}_i - R_{\text{SM}},\,0,\,0.55\Big),
+\]
+where $\Delta^{\text{rw}}_o,\Delta^{\text{rw}}_i$ are zero in this version and $R_{\text{SM}}$ aggregates global handoff rework reduction from roles (e.g.\ Scrum Master), as implemented in code. Draw rework; if it occurs, add $u_R$ units to the destination stage (and log an explanatory note). When entering \texttt{dev} or \texttt{teste} from a handoff between specialties, the initial remainder of the stage is increased by roundings that incorporate $M^{\text{hand}}$ (detail implemented in the source code).
+
+\subsection{Metrics}
+From the daily per-column count log (structure \texttt{DayLog} in code) one builds a time series per column, useful for CFD-style views and bottleneck inspection. For each completed card, cycle time is measured in global days between first work-stage entry (\texttt{analise}) and arrival in \texttt{deploy}. Throughput per sprint aggregates completions by the sprint of the global day of \texttt{deploy}.
+
+\subsection{Pseudocode of the work day}
+The listing below condenses the allocation policy from the previous subsections; handoff, rework, and diagnostic messages remain in the source code.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{minipage}{0.92\linewidth}
+  \small
+  \begin{verbatim}
+For each member m (fixed team order):
+  draw X_m and compute C_m (apply specialist multiplier if there is
+                           remaining work in the specialty column)
+  L <- C_m
+  Spend(h_m, L)                    // prioritize specialty column
+  for h in (analise, dev, teste):
+    Spend(h, L)
+
+Spend(h, L):
+  for each card in queue h (FIFO, snapshot of current state):
+    if rem <= 0: continue
+    if h == dev and card is collaborative:
+       M <- M_col(synergy between assignees)
+       consume delta <- min(L, rem/M) in raw units
+       rem <- rem - delta * M
+    else:
+       consume delta <- min(L, rem)
+       rem <- rem - delta
+    if rem == 0: try to advance card (handoff, possible rework)
+\end{verbatim}
+  \end{minipage}
+  \caption{Compact view of the daily work step (sequential per member; each consumes raw capacity before the next).}
+  \label{fig:pseudo}
+\end{figure}
+
+\subsection{Implementation and reproducibility}
+The engine is pure TypeScript (no UI dependency) under \texttt{src/simulation/}, exposing \texttt{runSimulation(config)} with PRNG deterministic in $\sigma$ (\texttt{rng.ts}). For interactive use in the web app, \texttt{createInteractiveRunner(config)} shares the same board state and transition policies, exposing \texttt{step()} (one day or retrospective), \texttt{advanceUntilAfterRetro()}, state queries (\texttt{getBoard}, \texttt{getLogs}, \texttt{getCompleted}), and \texttt{updateCardAssignees}, which revalidates assignees with the same rules as setup and forbids edits for cards already in \texttt{deploy}. Experimental scenarios and fixed parameters mirror \texttt{scripts/paperScenarios.ts}; figures and tables can be regenerated with \texttt{npm run paper:figures}. This supports reviewer audit and replication in labs or classrooms.
