@@ -35,6 +35,12 @@ type Props = {
   synergyPairBidirectional?: Record<string, boolean>;
   synergyDirected?: Record<string, number>;
   onUpdateAssignees: (cardId: string, assigneeIds: string[]) => void;
+  onTransferAssignee: (
+    sourceCardId: string,
+    targetCardId: string,
+    memberId: string,
+    targetSlotIndex: number,
+  ) => void;
   onManualMoveCard: (cardId: string, fromColumn: ColumnId, toColumn: ColumnId) => void;
   /** Mapa opcional: animação de progresso após avançar um dia de trabalho. */
   workFillPulse?: WorkFillPulse | null;
@@ -114,6 +120,7 @@ export function KanbanBoard({
   synergyPairBidirectional,
   synergyDirected,
   onUpdateAssignees,
+  onTransferAssignee,
   onManualMoveCard,
   workFillPulse = null,
 }: Props) {
@@ -370,6 +377,7 @@ export function KanbanBoard({
                           synergy={synergy}
                           dropTargetsActive={assigneeDragActive}
                           onApply={(next) => onUpdateAssignees(id, next)}
+                          onTransferAssignee={onTransferAssignee}
                           onAssigneeDragActiveChange={setAssigneeDragActive}
                         />
                       </div>

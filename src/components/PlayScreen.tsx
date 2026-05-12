@@ -99,6 +99,19 @@ export function PlayScreen({ config, onBackToSetup }: Props) {
     [runner, refresh, t],
   );
 
+  const handleTransferAssignee = useCallback(
+    (sourceCardId: string, targetCardId: string, memberId: string, targetSlotIndex: number) => {
+      const r = runner.transferAssignee(sourceCardId, targetCardId, memberId, targetSlotIndex);
+      if (!r.ok) {
+        setAssigneeError(t(r.errorKey, r.errorParams as Record<string, string | number> | undefined));
+        return;
+      }
+      setAssigneeError(null);
+      refresh();
+    },
+    [runner, refresh, t],
+  );
+
   const handleManualMoveCard = useCallback(
     (cardId: string, _fromColumn: ColumnId, toColumn: ColumnId) => {
       void _fromColumn;
@@ -442,6 +455,7 @@ export function PlayScreen({ config, onBackToSetup }: Props) {
             synergyPairBidirectional={config.synergyPairBidirectional}
             synergyDirected={config.synergyDirected}
             onUpdateAssignees={handleUpdateAssignees}
+            onTransferAssignee={handleTransferAssignee}
             onManualMoveCard={handleManualMoveCard}
             workFillPulse={workFillPulse}
           />

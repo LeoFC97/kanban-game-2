@@ -22,6 +22,13 @@ type Props = {
   /** Destaca caixas de largada quando alguém arrasta um nome da equipa. */
   dropTargetsActive?: boolean;
   onApply: (nextIds: string[]) => void;
+  /** Movimento de chip entre cartões (origem ≠ destino) ou reorder no mesmo cartão. */
+  onTransferAssignee?: (
+    sourceCardId: string,
+    targetCardId: string,
+    memberId: string,
+    targetSlotIndex: number,
+  ) => void;
   onAssigneeDragActiveChange?: (active: boolean) => void;
 };
 
@@ -54,6 +61,7 @@ export function AssigneeSlotsRow({
   synergy,
   dropTargetsActive = false,
   onApply,
+  onTransferAssignee,
   onAssigneeDragActiveChange,
 }: Props) {
   const { t } = useTranslation();
@@ -111,14 +119,16 @@ export function AssigneeSlotsRow({
           const raw = e.dataTransfer.getData(ASSIGNEE_DRAG_MIME);
           const p = parseAssigneeDragPayload(raw);
           if (!p || p.memberId === id) return;
-          // Roster: adicionar pessoa (com deslocamento se slot ocupado).
-          // Slot do mesmo cartão: reordenar internamente (move o chip para o slot alvo).
-          // Slot de outro cartão: ignorar (movimento entre cartões violaria a regra de 1 cartão ativo por pessoa).
-          if (
-            p.source === 'roster' ||
-            (p.source === 'slot' && p.cardId === cardId)
-          ) {
-            onApply(assigneesAfterSlotDrop(assigneeIds, isAppend ? appendIndex : slotIndex, p.memberId));
+          const targetIndex = isAppend ? appendIndex : slotIndex;
+          // Roster: adicionar pessoa idle (com deslocamento se slot ocupado).
+          if (p.source === 'roster') {
+            onApply(assigneesAfterSlotDrop(assigneeIds, targetIndex, p.memberId));
+            return;
+          }
+          // Slot: reorder no mesmo cartão OU transferência entre cartões.
+          // O transferAssignee no motor faz remove-na-origem → insere-no-destino atomicamente.
+          if (p.source === 'slot') {
+            onTransferAssignee?.(p.cardId, cardId, p.memberId, targetIndex);
           }
         }}
       >

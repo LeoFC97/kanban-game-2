@@ -63,10 +63,14 @@ describe('resolveAssigneesForCard', () => {
     if (!r.ok) expect(r.errorKey).toBe('errors.assigneesMustBeDistinct');
   });
 
-  it('erro quando após filtrar não sobra ninguém', () => {
+  it('aceita lista vazia após filtrar IDs inválidos (cartão fica sem responsáveis)', () => {
     const r = resolveAssigneesForCard(card, MEMBERS, ['ghost', 'nobody']);
-    expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.errorKey).toBe('errors.cardOneAssignee');
+    expect(r).toEqual({ ok: true, ids: [] });
+  });
+
+  it('aceita lista vazia explícita (remover todos os responsáveis)', () => {
+    const r = resolveAssigneesForCard(card, MEMBERS, []);
+    expect(r).toEqual({ ok: true, ids: [] });
   });
 });
 
@@ -318,6 +322,65 @@ describe('InteractiveRunner assignee + move rules', () => {
     r.step(); // daily 2: cartão sem assignees, nenhum progresso
     const remAfterDay2 = r.getBoard().cardsById['c1']!.remainingInStage;
     expect(remAfterDay2).toBe(remAfterDay1);
+  });
+
+  it('transferAssignee move membro entre cartões em colunas ativas', () => {
+    const r = createInteractiveRunner(
+      configWithCards([
+        { id: 'c1', title: 'A', points: 8, taskKind: 'backend', assigneeIds: ['ana'] },
+        { id: 'c2', title: 'B', points: 8, taskKind: 'backend', assigneeIds: ['bru'] },
+      ]),
+    );
+    r.step(); // planning → ambos puxados para análise (planningPullMax=3)
+    const out = r.transferAssignee('c1', 'c2', 'ana', 1);
+    expect(out).toEqual({ ok: true });
+    expect(r.getBoard().cardsById['c1']!.assigneeIds).toEqual([]);
+    expect(r.getBoard().cardsById['c2']!.assigneeIds).toEqual(['bru', 'ana']);
+  });
+
+  it('transferAssignee no mesmo cartão apenas reordena', () => {
+    const r = createInteractiveRunner(
+      configWithCards([
+        {
+          id: 'c1',
+          title: 'A',
+          points: 12,
+          taskKind: 'backend',
+          assigneeIds: ['ana', 'bru'],
+        },
+      ]),
+    );
+    r.step();
+    const out = r.transferAssignee('c1', 'c1', 'ana', 1);
+    expect(out).toEqual({ ok: true });
+    expect(r.getBoard().cardsById['c1']!.assigneeIds).toEqual(['bru', 'ana']);
+  });
+
+  it('transferAssignee rejeita destino no backlog', () => {
+    const r = createInteractiveRunner(
+      configWithCards(
+        [
+          { id: 'c1', title: 'A', points: 8, taskKind: 'backend', assigneeIds: ['ana'] },
+          { id: 'c2', title: 'B', points: 8, taskKind: 'backend', assigneeIds: ['bru'] },
+        ],
+        { planningPullMax: 0 }, // não puxa do backlog
+      ),
+    );
+    const out = r.transferAssignee('c1', 'c2', 'ana', 0);
+    expect(out.ok).toBe(false);
+    if (!out.ok) expect(out.errorKey).toBe('play.assigneeReadOnlyBacklog');
+  });
+
+  it('updateCardAssignees aceita lista vazia (cartão fica sem responsáveis)', () => {
+    const r = createInteractiveRunner(
+      configWithCards([
+        { id: 'c1', title: 'A', points: 8, taskKind: 'backend', assigneeIds: ['ana'] },
+      ]),
+    );
+    r.step();
+    const out = r.updateCardAssignees('c1', []);
+    expect(out).toEqual({ ok: true });
+    expect(r.getBoard().cardsById['c1']!.assigneeIds).toEqual([]);
   });
 
   it('advanceUntilAfterRetro para na retrospectiva', () => {

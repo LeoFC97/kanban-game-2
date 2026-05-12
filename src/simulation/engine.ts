@@ -556,13 +556,10 @@ export function resolveAssigneesForCard(
     seen.add(id);
     uniq.push(id);
   }
-  if (uniq.length < 1) {
-    return {
-      ok: false,
-      errorKey: 'errors.cardOneAssignee',
-      errorParams: { title: card.title },
-    };
-  }
+  // Lista vazia é permitida: cartão sem responsáveis simplesmente não recebe capacidade
+  // no dia (spendOnColumn pula em colunas ativas). Isso destrava o fluxo de "mover
+  // pessoa de um cartão para outro" (remove da origem → insere no destino) e o "tirar
+  // alguém arrastando para a pool".
   return { ok: true, ids: uniq };
 }
 
@@ -617,6 +614,17 @@ export type InteractiveRunner = {
    * Afeta sinergia em Dev e donos de handoff nas etapas seguintes.
    */
   updateCardAssignees: (cardId: string, assigneeIds: string[]) => UpdateCardAssigneesResult;
+  /**
+   * Move um membro de um cartão (origem) para outro (destino), ou reordena dentro
+   * do mesmo cartão. Atômico: se a inserção no destino falhar, restaura a origem.
+   * `targetSlotIndex` é a posição alvo (clampada a [0, len]).
+   */
+  transferAssignee: (
+    sourceCardId: string,
+    targetCardId: string,
+    memberId: string,
+    targetSlotIndex: number,
+  ) => UpdateCardAssigneesResult;
   /**
    * Move um cartão entre colunas (arrastar no quadro). Respeita WIP em Análise/Dev/Teste.
    * Atualiza `columnCounts` do último dia no log (para o CFD) quando já existe histórico.
@@ -798,6 +806,71 @@ export function createInteractiveRunner(config: GameConfig): InteractiveRunner {
     return { ok: true };
   }
 
+  function transferAssignee(
+    sourceCardId: string,
+    targetCardId: string,
+    memberId: string,
+    targetSlotIndex: number,
+  ): UpdateCardAssigneesResult {
+    const targetCard = board.cardsById[targetCardId];
+    if (!targetCard) return { ok: false, errorKey: 'play.assigneeUnknownCard' };
+    const targetCol = columnOfCard(board, targetCardId);
+    if (targetCol === 'backlog') {
+      return {
+        ok: false,
+        errorKey: 'play.assigneeReadOnlyBacklog',
+        errorParams: { title: targetCard.title },
+      };
+    }
+    if (targetCol === 'deploy') {
+      return {
+        ok: false,
+        errorKey: 'play.assigneeReadOnlyDeploy',
+        errorParams: { title: targetCard.title },
+      };
+    }
+
+    // Reorder no mesmo cartão.
+    if (sourceCardId === targetCardId) {
+      const ids = [...targetCard.assigneeIds];
+      const existing = ids.findIndex(
+        (tok) => resolveMemberIdFromToken(members, tok) === memberId,
+      );
+      if (existing >= 0) ids.splice(existing, 1);
+      const slot = Math.max(0, Math.min(targetSlotIndex, ids.length));
+      ids.splice(slot, 0, memberId);
+      return updateCardAssignees(targetCardId, ids);
+    }
+
+    // Transferência entre cartões: remove da origem primeiro para liberar a restrição
+    // de "1 cartão ativo por pessoa" no destino. Rollback se a inserção falhar.
+    const sourceCard = board.cardsById[sourceCardId];
+    if (!sourceCard) return { ok: false, errorKey: 'play.assigneeUnknownCard' };
+
+    const originalSource = [...sourceCard.assigneeIds];
+    const sourceWithoutMember = originalSource.filter(
+      (tok) => resolveMemberIdFromToken(members, tok) !== memberId,
+    );
+
+    const targetIds = [...targetCard.assigneeIds];
+    const existing = targetIds.findIndex(
+      (tok) => resolveMemberIdFromToken(members, tok) === memberId,
+    );
+    if (existing >= 0) targetIds.splice(existing, 1);
+    const slot = Math.max(0, Math.min(targetSlotIndex, targetIds.length));
+    targetIds.splice(slot, 0, memberId);
+
+    const removeResult = updateCardAssignees(sourceCardId, sourceWithoutMember);
+    if (!removeResult.ok) return removeResult;
+    const addResult = updateCardAssignees(targetCardId, targetIds);
+    if (!addResult.ok) {
+      // Rollback: restaura a origem.
+      sourceCard.assigneeIds = originalSource;
+      return addResult;
+    }
+    return { ok: true };
+  }
+
   function manualMoveCard(cardId: string, toColumn: ColumnId): ManualMoveResult {
     const fromCol = columnOfCard(board, cardId);
     if (!fromCol) return { ok: false, errorKey: 'play.manualMoveUnknownCard' };
@@ -843,6 +916,7 @@ export function createInteractiveRunner(config: GameConfig): InteractiveRunner {
     getLogs: () => logs,
     getCompleted: () => completed,
     updateCardAssignees,
+    transferAssignee,
     manualMoveCard,
     step: stepImpl,
     advanceUntilAfterRetro(): void {
